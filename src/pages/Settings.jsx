@@ -1,0 +1,279 @@
+import React, { useState } from 'react'
+import { Settings as SettingsIcon, Download, Upload, Database, AlertTriangle } from 'lucide-react'
+import { db } from '../db/database'
+
+const Settings = () => {
+  const [exportStatus, setExportStatus] = useState('')
+  const [importStatus, setImportStatus] = useState('')
+
+  // 导出数据
+  const exportData = async () => {
+    try {
+      setExportStatus('正在导出数据...')
+      
+      // 获取所有数据表的数据
+      const clothes = await db.clothes.toArray()
+      const inventory = await db.inventory.toArray()
+      const stockIn = await db.stockIn.toArray()
+      const stockOut = await db.stockOut.toArray()
+      
+      // 创建备份对象
+      const backupData = {
+        version: '1.0',
+        timestamp: new Date().toISOString(),
+        data: {
+          clothes,
+          inventory,
+          stockIn,
+          stockOut
+        }
+      }
+      
+      // 创建JSON文件
+      const dataStr = JSON.stringify(backupData, null, 2)
+      const dataBlob = new Blob([dataStr], { type: 'application/json' })
+      
+      // 创建下载链接
+      const url = URL.createObjectURL(dataBlob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `服装库存备份_${new Date().toISOString().split('T')[0]}.json`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+      
+      setExportStatus('数据导出成功！')
+      setTimeout(() => setExportStatus(''), 3000)
+    } catch (error) {
+      console.error('导出数据失败:', error)
+      setExportStatus('导出失败，请重试')
+      setTimeout(() => setExportStatus(''), 3000)
+    }
+  }
+
+  // 导入数据
+  const importData = (event) => {
+    const file = event.target.files[0]
+    if (!file) return
+    
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      try {
+        setImportStatus('正在导入数据...')
+        
+        const backupData = JSON.parse(e.target.result)
+        
+        // 验证备份文件格式
+        if (!backupData.version || !backupData.data) {
+          throw new Error('无效的备份文件格式')
+        }
+        
+        // 清空现有数据
+        await db.clothes.clear()
+        await db.inventory.clear()
+        await db.stockIn.clear()
+        await db.stockOut.clear()
+        
+        // 导入新数据
+        if (backupData.data.clothes) {
+          await db.clothes.bulkAdd(backupData.data.clothes)
+        }
+        if (backupData.data.inventory) {
+          await db.inventory.bulkAdd(backupData.data.inventory)
+        }
+        if (backupData.data.stockIn) {
+          await db.stockIn.bulkAdd(backupData.data.stockIn)
+        }
+        if (backupData.data.stockOut) {
+          await db.stockOut.bulkAdd(backupData.data.stockOut)
+        }
+        
+        setImportStatus('数据导入成功！页面将刷新...')
+        setTimeout(() => {
+          window.location.reload()
+        }, 2000)
+      } catch (error) {
+        console.error('导入数据失败:', error)
+        setImportStatus('导入失败：文件格式错误或数据损坏')
+        setTimeout(() => setImportStatus(''), 5000)
+      }
+    }
+    
+    reader.readAsText(file)
+    event.target.value = '' // 清空文件输入
+  }
+
+  return (
+    <div className="container">
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        marginBottom: '32px'
+      }}>
+        <SettingsIcon size={28} color="#666" />
+        <h1 className="text-xl font-semibold">系统设置</h1>
+      </div>
+
+      {/* 数据备份与恢复 */}
+      <div className="card">
+        <h2 style={{ 
+          fontSize: '20px', 
+          fontWeight: '600', 
+          marginBottom: '24px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <Database size={20} />
+          数据备份与恢复
+        </h2>
+        
+        <div style={{ 
+          color: '#666', 
+          marginBottom: '24px',
+          lineHeight: '1.6'
+        }}>
+          备份您的库存数据到本地文件，或从备份文件恢复数据。
+          建议定期备份数据以防意外丢失。
+        </div>
+
+        {/* 导出数据 */}
+        <div style={{ marginBottom: '32px' }}>
+          <h3 style={{ 
+            fontSize: '16px', 
+            fontWeight: '600', 
+            marginBottom: '16px',
+            color: '#333'
+          }}>
+            导出数据备份
+          </h3>
+          
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '16px',
+            flexWrap: 'wrap'
+          }}>
+            <button 
+              onClick={exportData}
+              className="btn btn-primary"
+              style={{ minHeight: '44px' }}
+            >
+              <Download size={16} />
+              导出数据备份
+            </button>
+            
+            {exportStatus && (
+              <span style={{ 
+                color: exportStatus.includes('成功') ? '#4CAF50' : '#f44336',
+                fontWeight: '500'
+              }}>
+                {exportStatus}
+              </span>
+            )}
+          </div>
+          
+          <div style={{ 
+            fontSize: '14px', 
+            color: '#666', 
+            marginTop: '8px'
+          }}>
+            将导出所有服装信息、库存数据、出入库记录到JSON文件
+          </div>
+        </div>
+
+        {/* 导入数据 */}
+        <div>
+          <h3 style={{ 
+            fontSize: '16px', 
+            fontWeight: '600', 
+            marginBottom: '16px',
+            color: '#333'
+          }}>
+            从备份文件恢复数据
+          </h3>
+          
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '16px',
+            flexWrap: 'wrap'
+          }}>
+            <label className="btn btn-secondary" style={{ 
+              minHeight: '44px',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <Upload size={16} />
+              选择备份文件
+              <input
+                type="file"
+                accept=".json"
+                onChange={importData}
+                style={{ display: 'none' }}
+              />
+            </label>
+            
+            {importStatus && (
+              <span style={{ 
+                color: importStatus.includes('成功') ? '#4CAF50' : '#f44336',
+                fontWeight: '500'
+              }}>
+                {importStatus}
+              </span>
+            )}
+          </div>
+          
+          <div style={{ 
+            fontSize: '14px', 
+            color: '#666', 
+            marginTop: '8px'
+          }}>
+            注意：导入数据将覆盖所有现有数据，请谨慎操作！
+          </div>
+        </div>
+      </div>
+
+      {/* 使用说明 */}
+      <div className="card">
+        <h2 style={{ 
+          fontSize: '20px', 
+          fontWeight: '600', 
+          marginBottom: '24px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <AlertTriangle size={20} color="#FF9800" />
+          使用说明
+        </h2>
+        
+        <div style={{ lineHeight: '1.6' }}>
+          <p style={{ marginBottom: '16px' }}>
+            <strong>数据备份流程：</strong>
+          </p>
+          <ol style={{ marginLeft: '20px', marginBottom: '16px' }}>
+            <li>点击"导出数据备份"按钮下载备份文件</li>
+            <li>将备份文件保存到安全位置（U盘、云盘等）</li>
+            <li>在不同设备上打开系统，选择"选择备份文件"</li>
+            <li>选择之前导出的备份文件进行恢复</li>
+          </ol>
+          
+          <p style={{ 
+            color: '#f44336', 
+            fontWeight: '500',
+            fontSize: '14px'
+          }}>
+            ⚠️ 重要提醒：导入数据会完全覆盖当前所有数据，请确保已备份重要数据！
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default Settings

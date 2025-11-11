@@ -1,0 +1,363 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #333;
+  background-color: #f5f5f5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 平板优化样式 */
+@media (max-width: 1024px) {
+  body {
+    font-size: 18px;
+  }
+  
+  button, input, select {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* 通用按钮样式 */
+.btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  min-height: 44px;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  background-color: #2196F3;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #1976D2;
+}
+
+.btn-success {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.btn-success:hover {
+  background-color: #388E3C;
+}
+
+.btn-danger {
+  background-color: #f44336;
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #d32f2f;
+}
+
+.btn-secondary {
+  background-color: #9E9E9E;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: #757575;
+}
+
+/* 表单样式 */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #555;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.2s ease;
+  background-color: white;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #2196F3;
+}
+
+/* 卡片样式 */
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+/* 表格样式 */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table th,
+.table td {
+  padding: 16px;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #555;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+/* 手机端动画 */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 响应式表格 */
+@media (max-width: 768px) {
+  .table {
+    font-size: 14px;
+  }
+  
+  .table th,
+  .table td {
+    padding: 12px 8px;
+  }
+  
+  /* 手机端主内容区域调整 */
+  .main-content {
+    padding-bottom: 80px !important; /* 为底部导航留出空间 */
+  }
+  
+  /* 手机端卡片优化 */
+  .card {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  
+  /* 手机端按钮优化 */
+  .btn {
+    padding: 14px 20px;
+    font-size: 16px;
+    min-height: 48px;
+    width: 100%;
+    margin-bottom: 8px;
+  }
+  
+  /* 手机端表单优化 */
+  .form-input {
+    font-size: 16px; /* 防止iOS缩放 */
+    padding: 14px;
+  }
+  
+  /* 手机端标题优化 */
+  .text-xl {
+    font-size: 18px;
+  }
+  
+  .text-lg {
+    font-size: 16px;
+  }
+  
+  /* 手机端表格卡片化 */
+  .mobile-table-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .mobile-table-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .mobile-table-cell {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  
+  .mobile-table-cell:last-child {
+    border-bottom: none;
+  }
+  
+  .mobile-table-label {
+    font-weight: 600;
+    color: #666;
+    min-width: 80px;
+  }
+  
+  .mobile-table-value {
+    flex: 1;
+    text-align: right;
+    color: #333;
+  }
+  
+  /* 手机端操作按钮组 */
+  .mobile-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 12px;
+  }
+}
+
+/* 布局样式 */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.gap-4 {
+  gap: 16px;
+}
+
+.mb-4 {
+  margin-bottom: 16px;
+}
+
+.mb-6 {
+  margin-bottom: 24px;
+}
+
+.text-center {
+  text-align: center;
+}
+
+/* App布局样式 */
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-content {
+  display: flex;
+  flex: 1;
+  min-height: calc(100vh - 80px);
+}
+
+.main-content {
+  flex: 1;
+  padding: 20px;
+  background-color: #f8f9fa;
+  overflow-y: auto;
+}
+
+/* 平板优化 */
+@media (max-width: 1024px) {
+  .main-content {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-content {
+    flex-direction: column;
+  }
+  
+  .main-content {
+    padding: 12px;
+  }
+}
+
+.text-lg {
+  font-size: 18px;
+}
+
+.text-xl {
+  font-size: 20px;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.text-green {
+  color: #4CAF50;
+}
+
+.text-red {
+  color: #f44336;
+}
+
+.text-blue {
+  color: #2196F3;
+}
