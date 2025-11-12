@@ -1,9 +1,6 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { 
-  Package, 
-  TrendingUp
-} from 'lucide-react'
+import { Warehouse, Shirt } from 'lucide-react'
 
 const Dashboard = () => {
   const navigate = useNavigate()
@@ -14,18 +11,22 @@ const Dashboard = () => {
     console.log('刷新数据')
   }
   
+  // 创建自定义图标组件，使用emoji作为lucide-react的替代
+  const PackageIcon = ({ size }) => <span style={{ fontSize: size }}>📦</span>
+  const TrendingUpIcon = ({ size }) => <span style={{ fontSize: size }}>📈</span>
+
   const quickActions = [
     {
       title: '快速入库',
       description: '添加新服装到库存',
-      icon: Package,
+      icon: PackageIcon,
       path: '/stock-in',
       color: '#4CAF50'
     },
     {
       title: '快速出库',
       description: '销售服装并更新库存',
-      icon: TrendingUp,
+      icon: TrendingUpIcon,
       path: '/stock-out',
       color: '#2196F3'
     },
@@ -58,16 +59,19 @@ const Dashboard = () => {
           onClick={refreshStats}
           className="btn btn-secondary"
           style={{ 
-            minHeight: '36px', 
-            padding: '6px 12px',
-            fontSize: '14px',
+            minHeight: '32px', 
+            padding: '4px 10px',
+            fontSize: '13px',
             display: 'flex',
             alignItems: 'center',
-            gap: '4px'
+            gap: '3px',
+            whiteSpace: 'nowrap',
+            // 移动端优化
+            maxWidth: '120px'
           }}
         >
-          <RefreshCw size={14} />
-          刷新数据
+          <RefreshCw size={12} />
+          刷新
         </button>
       </div>
 
