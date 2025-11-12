@@ -234,10 +234,19 @@ const StockIn = ({ refreshStats }) => {
                 type="button"
                 onClick={addStockInItem}
                 className="btn btn-primary"
-                style={{ minHeight: '44px' }}
+                style={{ 
+                  minHeight: '36px', 
+                  padding: '4px 12px',
+                  fontSize: '13px',
+                  whiteSpace: 'nowrap',
+                  maxWidth: '100px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
               >
-                <Plus size={16} />
-                添加项目
+                <Plus size={14} />
+                添加
               </button>
             </div>
 
