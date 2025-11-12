@@ -19,64 +19,98 @@ const Reports = () => {
 
   const loadReports = async () => {
     try {
-      const [stockOutRecords, stockInRecords, clothes] = await Promise.all([
-        db.stockOut.where('date').between(dateRange.start, dateRange.end).toArray(),
-        db.stockIn.where('date').between(dateRange.start, dateRange.end).toArray(),
-        db.clothes.toArray()
-      ])
+      // 确保日期范围查询包含边界日期的所有记录
+      const startDate = dateRange.start;
+      const endDate = dateRange.end;
+      
+      // 增加调试日志
+      console.log('正在加载报表数据，日期范围:', { startDate, endDate });
+      
+      // 使用更宽松的日期比较，确保包含边界日期的所有记录
+      const stockOutRecords = await db.stockOut.filter(record => {
+        // 处理可能的日期格式不一致问题
+        const recordDate = typeof record.date === 'string' ? record.date.split('T')[0] : record.date;
+        return recordDate >= startDate && recordDate <= endDate;
+      }).toArray();
+      
+      const stockInRecords = await db.stockIn.filter(record => {
+        const recordDate = typeof record.date === 'string' ? record.date.split('T')[0] : record.date;
+        return recordDate >= startDate && recordDate <= endDate;
+      }).toArray();
+      
+      const clothes = await db.clothes.toArray();
+      
+      console.log('查询结果数量:', { stockOutRecords: stockOutRecords.length, stockInRecords: stockInRecords.length });
 
       // 销售统计
-      const salesByDate = {}
-      const salesByProduct = {}
-      let totalSales = 0
-      let totalProfit = 0
+      const salesByDate = {};
+      const salesByProduct = {};
+      let totalSales = 0;
+      let totalProfit = 0;
+      let totalQuantity = 0;
 
       stockOutRecords.forEach(record => {
-        // 确保有必要的字段
-        if (!record.totalAmount || !record.quantity || !record.clothingId) {
-          console.warn('出库记录缺少必要字段:', record)
-          return
-        }
-
-        const clothing = clothes.find(c => c.id === record.clothingId)
-        if (clothing && clothing.purchasePrice !== undefined) {
-          // 按日期统计
-          if (!salesByDate[record.date]) {
-            salesByDate[record.date] = { sales: 0, profit: 0, count: 0 }
-          }
-          salesByDate[record.date].sales += record.totalAmount
-          salesByDate[record.date].profit += record.totalAmount - (record.quantity * clothing.purchasePrice)
-          salesByDate[record.date].count += record.quantity
-
-          // 按产品统计
-          if (!salesByProduct[record.clothingId]) {
-            salesByProduct[record.clothingId] = {
-              name: clothing.name || '未知名称',
-              code: clothing.code || '未知编码',
-              sales: 0,
-              quantity: 0,
-              profit: 0
-            }
-          }
-          salesByProduct[record.clothingId].sales += record.totalAmount
-          salesByProduct[record.clothingId].quantity += record.quantity
-          salesByProduct[record.clothingId].profit += record.totalAmount - (record.quantity * clothing.purchasePrice)
-
-          totalSales += record.totalAmount
-          totalProfit += record.totalAmount - (record.quantity * clothing.purchasePrice)
-        } else {
-          // 如果没有找到对应的服装信息，仍然将销售金额计入总额
-          // 但不计算利润（因为缺少采购价格信息）
-          if (!salesByDate[record.date]) {
-            salesByDate[record.date] = { sales: 0, profit: 0, count: 0 }
-          }
-          salesByDate[record.date].sales += record.totalAmount
-          salesByDate[record.date].count += record.quantity
+        // 修复：即使缺少部分字段，也尝试收集可用数据
+        const recordTotalAmount = record.totalAmount || 0;
+        const recordQuantity = record.quantity || 0;
+        
+        // 确保有必要的销售金额数据才进行统计
+        if (recordTotalAmount > 0) {
+          // 修复：将所有有效销售金额计入总销售额
+          totalSales += recordTotalAmount;
+          totalQuantity += recordQuantity;
           
-          totalSales += record.totalAmount
-          console.warn('出库记录找不到对应服装信息:', record)
+          // 按日期统计（始终记录销售额和数量）
+          const recordDate = record.date || '未知日期';
+          if (!salesByDate[recordDate]) {
+            salesByDate[recordDate] = { sales: 0, profit: 0, quantity: 0 };
+          }
+          salesByDate[recordDate].sales += recordTotalAmount;
+          salesByDate[recordDate].quantity += recordQuantity;
+          
+          // 如果有服装ID和数量，尝试计算利润
+          if (record.clothingId) {
+            const clothing = clothes.find(c => c.id === record.clothingId);
+            
+            if (clothing && clothing.purchasePrice !== undefined && clothing.purchasePrice > 0 && recordQuantity > 0) {
+              // 可以计算利润的情况
+              const profit = recordTotalAmount - (recordQuantity * clothing.purchasePrice);
+              
+              // 更新日期统计的利润
+              salesByDate[recordDate].profit += profit;
+              
+              // 更新总利润
+              totalProfit += profit;
+              
+              // 按产品统计
+              if (!salesByProduct[record.clothingId]) {
+                salesByProduct[record.clothingId] = {
+                  name: clothing.name || '未知名称',
+                  code: clothing.code || '未知编码',
+                  sales: 0,
+                  quantity: 0,
+                  profit: 0
+                };
+              }
+              salesByProduct[record.clothingId].sales += recordTotalAmount;
+              salesByProduct[record.clothingId].quantity += recordQuantity;
+              salesByProduct[record.clothingId].profit += profit;
+            } else {
+              // 无法计算利润的情况，但仍然记录销售额和数量
+              console.warn('无法计算利润，缺少必要信息:', {
+                record,
+                clothing: clothing || '未找到'
+              });
+            }
+          } else {
+            console.warn('出库记录缺少服装ID:', record);
+          }
+        } else {
+          console.warn('出库记录销售金额无效:', record);
         }
       })
+      
+      console.log('统计结果:', { totalSales, totalProfit, totalQuantity });
 
       // 采购统计
       const purchasesByDate = {}
