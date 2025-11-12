@@ -101,18 +101,27 @@ const StockOut = ({ refreshStats }) => {
         const clothing = clothes.find(c => c.id === parseInt(item.clothingId))
         const totalAmount = item.quantity * item.sellingPrice
         
-        // 添加出库记录
+        // 确保totalAmount计算正确
+        const calculatedTotalAmount = parseFloat((item.quantity * item.sellingPrice).toFixed(2));
+        
+        // 添加出库记录，确保所有必要字段完整
         await db.stockOut.add({
           clothingId: parseInt(item.clothingId),
           quantity: parseInt(item.quantity),
           sellingPrice: parseFloat(item.sellingPrice),
-          totalAmount: totalAmount,
+          totalAmount: calculatedTotalAmount, // 使用精确计算的总金额
           date: formData.date,
-          operator: formData.operator,
-          customer: formData.customer,
-          notes: formData.notes,
-          createdAt: new Date()
-        })
+          operator: formData.operator || '未知操作员',
+          customer: formData.customer || '',
+          notes: formData.notes || '',
+          createdAt: new Date(),
+          updatedAt: new Date() // 添加更新时间字段，便于后续管理
+        });
+        
+        // 标记离线更改
+        if (!navigator.onLine) {
+          db.markOfflineChange();
+        }
         
         // 更新库存
         const existingInventory = await db.inventory

@@ -32,8 +32,14 @@ const Reports = () => {
       let totalProfit = 0
 
       stockOutRecords.forEach(record => {
+        // 确保有必要的字段
+        if (!record.totalAmount || !record.quantity || !record.clothingId) {
+          console.warn('出库记录缺少必要字段:', record)
+          return
+        }
+
         const clothing = clothes.find(c => c.id === record.clothingId)
-        if (clothing) {
+        if (clothing && clothing.purchasePrice !== undefined) {
           // 按日期统计
           if (!salesByDate[record.date]) {
             salesByDate[record.date] = { sales: 0, profit: 0, count: 0 }
@@ -45,8 +51,8 @@ const Reports = () => {
           // 按产品统计
           if (!salesByProduct[record.clothingId]) {
             salesByProduct[record.clothingId] = {
-              name: clothing.name,
-              code: clothing.code,
+              name: clothing.name || '未知名称',
+              code: clothing.code || '未知编码',
               sales: 0,
               quantity: 0,
               profit: 0
@@ -58,6 +64,17 @@ const Reports = () => {
 
           totalSales += record.totalAmount
           totalProfit += record.totalAmount - (record.quantity * clothing.purchasePrice)
+        } else {
+          // 如果没有找到对应的服装信息，仍然将销售金额计入总额
+          // 但不计算利润（因为缺少采购价格信息）
+          if (!salesByDate[record.date]) {
+            salesByDate[record.date] = { sales: 0, profit: 0, count: 0 }
+          }
+          salesByDate[record.date].sales += record.totalAmount
+          salesByDate[record.date].count += record.quantity
+          
+          totalSales += record.totalAmount
+          console.warn('出库记录找不到对应服装信息:', record)
         }
       })
 
