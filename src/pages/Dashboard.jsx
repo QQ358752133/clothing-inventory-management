@@ -1,6 +1,5 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Warehouse, Shirt } from 'lucide-react'
 
 const Dashboard = () => {
   const navigate = useNavigate()
