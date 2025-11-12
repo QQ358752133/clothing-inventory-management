@@ -57,9 +57,16 @@ const Dashboard = () => {
         <button 
           onClick={refreshStats}
           className="btn btn-secondary"
-          style={{ minHeight: '44px' }}
+          style={{ 
+            minHeight: '36px', 
+            padding: '6px 12px',
+            fontSize: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}
         >
-          <RefreshCw size={16} />
+          <RefreshCw size={14} />
           刷新数据
         </button>
       </div>
