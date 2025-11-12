@@ -10,6 +10,15 @@ export class ClothingInventoryDB extends Dexie {
       stockIn: '++id, clothingId, quantity, purchasePrice, totalAmount, date, operator, notes',
       stockOut: '++id, clothingId, quantity, sellingPrice, totalAmount, date, operator, customer, notes'
     })
+    
+    // 更新到版本2，添加settings表
+    this.version(2).stores({
+      clothes: '++id, code, name, category, size, color, purchasePrice, sellingPrice, createdAt',
+      inventory: '++id, clothingId, quantity, updatedAt',
+      stockIn: '++id, clothingId, quantity, purchasePrice, totalAmount, date, operator, notes',
+      stockOut: '++id, clothingId, quantity, sellingPrice, totalAmount, date, operator, customer, notes',
+      settings: 'key, value'
+    })
   }
 
   // 离线数据同步状态

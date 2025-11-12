@@ -1,10 +1,53 @@
-import React, { useState } from 'react'
-import { Settings as SettingsIcon, Download, Upload, Database, AlertTriangle } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { Settings as SettingsIcon, Download, Upload, Database, AlertTriangle, AlertCircle, Save } from 'lucide-react'
 import { db } from '../db/database'
 
 const Settings = () => {
   const [exportStatus, setExportStatus] = useState('')
   const [importStatus, setImportStatus] = useState('')
+  const [lowStockThreshold, setLowStockThreshold] = useState('')
+  const [saveStatus, setSaveStatus] = useState('')
+  
+  // 加载低库存阈值设置
+  useEffect(() => {
+    loadLowStockThreshold()
+  }, [])
+  
+  const loadLowStockThreshold = async () => {
+    try {
+      const setting = await db.settings.get({ key: 'lowStockThreshold' })
+      if (setting) {
+        setLowStockThreshold(setting.value.toString())
+      }
+    } catch (error) {
+      console.error('加载低库存阈值失败:', error)
+    }
+  }
+  
+  // 保存低库存阈值设置
+  const saveLowStockThreshold = async () => {
+    try {
+      setSaveStatus('正在保存...')
+      const threshold = parseInt(lowStockThreshold)
+      
+      // 验证输入
+      if (isNaN(threshold) || threshold < 0) {
+        setSaveStatus('请输入有效的非负整数')
+        setTimeout(() => setSaveStatus(''), 3000)
+        return
+      }
+      
+      // 保存到数据库
+      await db.settings.put({ key: 'lowStockThreshold', value: threshold })
+      
+      setSaveStatus('保存成功！')
+      setTimeout(() => setSaveStatus(''), 3000)
+    } catch (error) {
+      console.error('保存低库存阈值失败:', error)
+      setSaveStatus('保存失败，请重试')
+      setTimeout(() => setSaveStatus(''), 3000)
+    }
+  }
 
   // 导出数据
   const exportData = async () => {
@@ -116,6 +159,79 @@ const Settings = () => {
         <h1 className="text-xl font-semibold">系统设置</h1>
       </div>
 
+      {/* 低库存阈值设置 */}
+      <div className="card" style={{ marginBottom: '32px' }}>
+        <h2 style={{ 
+          fontSize: '20px', 
+          fontWeight: '600', 
+          marginBottom: '24px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <AlertCircle size={20} color="#FF9800" />
+          低库存阈值设置
+        </h2>
+        
+        <div style={{ marginBottom: '16px', lineHeight: '1.6' }}>
+          设置库存预警阈值，当商品库存低于此值时将标记为低库存。
+        </div>
+        
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '16px',
+          flexWrap: 'wrap',
+          marginBottom: '16px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <label htmlFor="lowStockThreshold" style={{ fontWeight: '500', minWidth: '120px' }}>
+              低库存阈值：
+            </label>
+            <input
+              id="lowStockThreshold"
+              type="number"
+              value={lowStockThreshold}
+              onChange={(e) => setLowStockThreshold(e.target.value)}
+              placeholder="请输入阈值"
+              style={{
+                padding: '8px 12px',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                fontSize: '16px',
+                width: '150px'
+              }}
+              min="0"
+              step="1"
+            />
+          </div>
+          
+          <button
+            onClick={saveLowStockThreshold}
+            className="btn btn-primary"
+            style={{ 
+              minHeight: '44px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <Save size={16} />
+            保存设置
+          </button>
+        </div>
+        
+        {saveStatus && (
+          <div style={{
+            color: saveStatus.includes('成功') ? '#4CAF50' : (saveStatus.includes('有效的') ? '#FF9800' : '#f44336'),
+            fontWeight: '500',
+            fontSize: '14px'
+          }}>
+            {saveStatus}
+          </div>
+        )}
+      </div>
+      
       {/* 数据备份与恢复 */}
       <div className="card">
         <h2 style={{ 

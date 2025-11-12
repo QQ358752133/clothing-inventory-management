@@ -1,4 +1,5 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import { 
   Package, 
   TrendingUp, 
@@ -9,6 +10,7 @@ import {
 } from 'lucide-react'
 
 const Dashboard = ({ stats, refreshStats }) => {
+  const navigate = useNavigate()
   const quickActions = [
     {
       title: '快速入库',
@@ -165,7 +167,7 @@ const Dashboard = ({ stats, refreshStats }) => {
             return (
               <button
                 key={index}
-                onClick={() => window.location.href = action.path}
+                onClick={() => navigate(action.path)}
                 style={{
                   background: 'white',
                   border: `2px solid ${action.color}20`,

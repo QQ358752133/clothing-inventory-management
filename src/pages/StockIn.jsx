@@ -8,7 +8,7 @@ const StockIn = ({ refreshStats }) => {
   const [stockInItems, setStockInItems] = useState([])
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
-    operator: '',
+    operator: '财务',
     notes: ''
   })
 
@@ -35,9 +35,23 @@ const StockIn = ({ refreshStats }) => {
   }
 
   const updateStockInItem = (id, field, value) => {
-    setStockInItems(stockInItems.map(item => 
-      item.id === id ? { ...item, [field]: value } : item
-    ))
+    setStockInItems(stockInItems.map(item => {
+      if (item.id === id) {
+        // 如果是选择服装，自动填充进货价
+        if (field === 'clothingId' && value) {
+          const selectedClothing = clothes.find(c => c.id === parseInt(value));
+          if (selectedClothing && selectedClothing.purchasePrice) {
+            return {
+              ...item,
+              [field]: value,
+              purchasePrice: selectedClothing.purchasePrice
+            };
+          }
+        }
+        return { ...item, [field]: value };
+      }
+      return item;
+    }))
   }
 
   const removeStockInItem = (id) => {
@@ -59,12 +73,12 @@ const StockIn = ({ refreshStats }) => {
 
     try {
       for (const item of stockInItems) {
-        const clothing = clothes.find(c => c.id === parseInt(item.clothingId))
+        const clothingId = parseInt(item.clothingId)
         const totalAmount = item.quantity * item.purchasePrice
         
         // 添加入库记录
         await db.stockIn.add({
-          clothingId: parseInt(item.clothingId),
+          clothingId: clothingId,
           quantity: parseInt(item.quantity),
           purchasePrice: parseFloat(item.purchasePrice),
           totalAmount: totalAmount,
@@ -77,7 +91,7 @@ const StockIn = ({ refreshStats }) => {
         // 更新库存
         const existingInventory = await db.inventory
           .where('clothingId')
-          .equals(parseInt(item.clothingId))
+          .equals(clothingId)
           .first()
         
         if (existingInventory) {
@@ -87,11 +101,17 @@ const StockIn = ({ refreshStats }) => {
           })
         } else {
           await db.inventory.add({
-            clothingId: parseInt(item.clothingId),
+            clothingId: clothingId,
             quantity: parseInt(item.quantity),
             updatedAt: new Date()
           })
         }
+        
+        // 自动更新服装的进货价格
+        await db.clothes.update(clothingId, {
+          purchasePrice: parseFloat(item.purchasePrice),
+          updatedAt: new Date()
+        })
       }
       
       // 重置表单

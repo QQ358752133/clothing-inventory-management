@@ -9,7 +9,7 @@ const StockOut = ({ refreshStats }) => {
   const [stockOutItems, setStockOutItems] = useState([])
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
-    operator: '',
+    operator: '店长',
     customer: '',
     notes: ''
   })

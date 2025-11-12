@@ -1,5 +1,5 @@
 import React from 'react'
-import { Package, Store } from 'lucide-react'
+import { Store } from 'lucide-react'
 
 const Header = () => {
   return (
@@ -27,7 +27,11 @@ const Header = () => {
           justifyContent: 'center',
           flexShrink: 0
         }}>
-          <Package size={28} />
+          <img 
+            src="/蝴蝶结.svg" 
+            alt="Logo" 
+            style={{ width: '28px', height: '28px', objectFit: 'contain' }} 
+          />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <h1 style={{
@@ -41,7 +45,7 @@ const Header = () => {
             overflow: 'hidden',
             textOverflow: 'ellipsis'
           }}>
-            服装店出入库管理系统
+            梅静时光
             <Store size={20} />
           </h1>
           <p style={{
@@ -52,7 +56,7 @@ const Header = () => {
             overflow: 'hidden',
             textOverflow: 'ellipsis'
           }}>
-            专业服装库存管理 - 平板优化版本
+            一衣一世界，一符一春秋
           </p>
         </div>
       </div>

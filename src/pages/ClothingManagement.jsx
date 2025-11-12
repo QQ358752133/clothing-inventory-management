@@ -15,6 +15,8 @@ const ClothingManagement = ({ refreshStats }) => {
     category: '',
     size: '',
     color: '',
+    customColor: '',
+    categoryCustom: '',
     purchasePrice: '',
     sellingPrice: ''
   })
@@ -35,10 +37,17 @@ const ClothingManagement = ({ refreshStats }) => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
+      // 处理自定义颜色
+      const finalColor = (formData.color === '其他' && formData.customColor) ? formData.customColor : formData.color
+      // 处理自定义品类
+      const finalCategory = (formData.category === '其他' && formData.categoryCustom) ? formData.categoryCustom : formData.category
+      
       if (editingClothing) {
         // 更新服装信息
         await db.clothes.update(editingClothing.id, {
           ...formData,
+          color: finalColor,
+          category: finalCategory,
           purchasePrice: parseFloat(formData.purchasePrice),
           sellingPrice: parseFloat(formData.sellingPrice),
           updatedAt: new Date()
@@ -47,6 +56,8 @@ const ClothingManagement = ({ refreshStats }) => {
         // 新增服装
         await db.clothes.add({
           ...formData,
+          color: finalColor,
+          category: finalCategory,
           purchasePrice: parseFloat(formData.purchasePrice),
           sellingPrice: parseFloat(formData.sellingPrice),
           createdAt: new Date(),
@@ -76,6 +87,8 @@ const ClothingManagement = ({ refreshStats }) => {
       category: '',
       size: '',
       color: '',
+      customColor: '',
+      categoryCustom: '',
       purchasePrice: '',
       sellingPrice: ''
     })
@@ -84,12 +97,18 @@ const ClothingManagement = ({ refreshStats }) => {
   }
 
   const editClothing = (clothing) => {
+    // 判断是否是自定义颜色
+    const isCustomColor = !colors.includes(clothing.color)
+    // 判断是否是自定义品类
+    const isCustomCategory = !categories.includes(clothing.category)
     setFormData({
       code: clothing.code,
       name: clothing.name,
-      category: clothing.category,
+      category: isCustomCategory ? '其他' : clothing.category || '',
       size: clothing.size,
-      color: clothing.color,
+      color: isCustomColor ? '其他' : clothing.color,
+      customColor: isCustomColor ? clothing.color : '',
+      categoryCustom: isCustomCategory ? clothing.category : '',
       purchasePrice: clothing.purchasePrice,
       sellingPrice: clothing.sellingPrice
     })
@@ -113,11 +132,12 @@ const ClothingManagement = ({ refreshStats }) => {
   const filteredClothes = clothes.filter(clothing =>
     clothing.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     clothing.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    clothing.category.toLowerCase().includes(searchTerm.toLowerCase())
+    (clothing.category && clothing.category.toLowerCase().includes(searchTerm.toLowerCase()))
   )
 
-  const categories = [...new Set(clothes.map(c => c.category))]
   const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
+  const colors = ['黑色', '白色', '红色', '蓝色', '绿色', '黄色', '紫色', '灰色', '棕色', '粉色', '橙色', '青色']
+  const categories = ['连衣裙', '上衣', 'T恤', '衬衫', '卫衣', '毛衣', '外套', '牛仔裤', '休闲裤', '短裙', '长裙', '半身裙', '短裤', '阔腿裤', '西装裤', '运动裤', '针织衫', '背心', '吊带裙', '背带裤']
 
   return (
     <div className="container">
@@ -215,11 +235,22 @@ const ClothingManagement = ({ refreshStats }) => {
                   className="form-input"
                 >
                   <option value="">选择品类</option>
-                  {categories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
+                  {categories.map(category => (
+                    <option key={category} value={category}>{category}</option>
                   ))}
-                  <option value="other">其他</option>
+                  <option value="其他">其他</option>
                 </select>
+                {formData.category === '其他' && (
+                  <input
+                    type="text"
+                    className="form-input"
+                    style={{ marginTop: '8px' }}
+                    value={formData.categoryCustom}
+                    onChange={(e) => setFormData({...formData, categoryCustom: e.target.value})}
+                    placeholder="手动输入品类名称"
+                    required={formData.category === '其他'}
+                  />
+                )}
               </div>
               
               <div className="form-group">
@@ -239,14 +270,28 @@ const ClothingManagement = ({ refreshStats }) => {
               
               <div className="form-group">
                 <label className="form-label">颜色 *</label>
-                <input
-                  type="text"
-                  required
+                <select
                   value={formData.color}
                   onChange={(e) => setFormData({...formData, color: e.target.value})}
                   className="form-input"
-                  placeholder="如：黑色"
-                />
+                  required
+                >
+                  <option value="">选择颜色</option>
+                  {colors.map(color => (
+                    <option key={color} value={color}>{color}</option>
+                  ))}
+                  <option value="其他">其他</option>
+                </select>
+                {(formData.color === '其他' || formData.customColor) && (
+                  <input
+                    type="text"
+                    className="form-input"
+                    style={{ marginTop: '8px' }}
+                    value={formData.customColor}
+                    onChange={(e) => setFormData({...formData, customColor: e.target.value})}
+                    placeholder="手动输入颜色名称"
+                  />
+                )}
               </div>
               
               <div className="form-group">
@@ -334,7 +379,7 @@ const ClothingManagement = ({ refreshStats }) => {
                 </div>
                 <div className="mobile-table-cell">
                   <span className="mobile-table-label">品类</span>
-                  <span className="mobile-table-value">{clothing.category}</span>
+                  <span className="mobile-table-value">{clothing.category || '-'}</span>
                 </div>
                 <div className="mobile-table-cell">
                   <span className="mobile-table-label">尺码</span>
@@ -396,7 +441,7 @@ const ClothingManagement = ({ refreshStats }) => {
                   <tr key={clothing.id}>
                     <td style={{ fontWeight: '600' }}>{clothing.code}</td>
                     <td>{clothing.name}</td>
-                    <td>{clothing.category}</td>
+                    <td>{clothing.category || '-'}</td>
                     <td>{clothing.size}</td>
                     <td>{clothing.color}</td>
                     <td>¥{clothing.purchasePrice.toFixed(2)}</td>
