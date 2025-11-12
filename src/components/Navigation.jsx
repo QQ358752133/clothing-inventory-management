@@ -8,6 +8,7 @@ import {
   Warehouse,
   BarChart3,
   Settings,
+  Database,
   Menu,
   X
 } from 'lucide-react'
@@ -35,6 +36,7 @@ const Navigation = ({ activeTab, setActiveTab }) => {
     { id: 'stock-out', path: '/stock-out', label: '出库管理', icon: PackageMinus },
     { id: 'inventory', path: '/inventory', label: '库存查询', icon: Warehouse },
     { id: 'reports', path: '/reports', label: '统计报表', icon: BarChart3 },
+    { id: 'data-viewer', path: '/data-viewer', label: '数据查看器', icon: Database },
     { id: 'settings', path: '/settings', label: '系统设置', icon: Settings }
   ]
 

@@ -2,15 +2,18 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { 
   Package, 
-  TrendingUp, 
-  AlertTriangle, 
-  DollarSign,
-  Calendar,
-  Users
+  TrendingUp
 } from 'lucide-react'
 
-const Dashboard = ({ stats, refreshStats }) => {
+const Dashboard = () => {
   const navigate = useNavigate()
+  
+  // 刷新数据函数（保留按钮功能）
+  const refreshStats = () => {
+    // 刷新逻辑已简化，因为统计数据已移除
+    console.log('刷新数据')
+  }
+  
   const quickActions = [
     {
       title: '快速入库',
@@ -61,88 +64,7 @@ const Dashboard = ({ stats, refreshStats }) => {
         </button>
       </div>
 
-      {/* 统计卡片 */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-        gap: '20px',
-        marginBottom: '32px'
-      }}>
-        <div className="card">
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '16px'
-          }}>
-            <div style={{
-              background: '#E3F2FD',
-              borderRadius: '12px',
-              padding: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <Package size={24} color="#2196F3" />
-            </div>
-            <div>
-              <div style={{ fontSize: '14px', color: '#666' }}>服装品类总数</div>
-              <div style={{ fontSize: '28px', fontWeight: '600', color: '#2196F3' }}>
-                {stats.totalClothes}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '16px'
-          }}>
-            <div style={{
-              background: '#E8F5E8',
-              borderRadius: '12px',
-              padding: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <DollarSign size={24} color="#4CAF50" />
-            </div>
-            <div>
-              <div style={{ fontSize: '14px', color: '#666' }}>库存总价值</div>
-              <div style={{ fontSize: '28px', fontWeight: '600', color: '#4CAF50' }}>
-                ¥{stats.totalValue.toLocaleString()}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '16px'
-          }}>
-            <div style={{
-              background: '#FFF3E0',
-              borderRadius: '12px',
-              padding: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <AlertTriangle size={24} color="#FF9800" />
-            </div>
-            <div>
-              <div style={{ fontSize: '14px', color: '#666' }}>低库存预警</div>
-              <div style={{ fontSize: '28px', fontWeight: '600', color: '#FF9800' }}>
-                {stats.lowStockItems}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* 统计卡片已移除，按照需求不显示服装品类总数、库存总价值和低库存预警 */}
 
       {/* 快速操作 */}
       <div className="card">
@@ -256,11 +178,12 @@ const Dashboard = ({ stats, refreshStats }) => {
   )
 }
 
-// 添加缺失的图标组件
-const RefreshCw = ({ size }) => <span>↻</span>
-const Warehouse = ({ size }) => <span>📦</span>
-const Shirt = ({ size }) => <span>👕</span>
-const Zap = ({ size }) => <span>⚡</span>
-const Activity = ({ size }) => <span>📊</span>
+// 图标组件（使用emoji作为简化替代）
+const RefreshCw = ({ size }) => <span style={{ fontSize: size }}>↻</span>
+const Warehouse = ({ size }) => <span style={{ fontSize: size }}>📦</span>
+const Shirt = ({ size }) => <span style={{ fontSize: size }}>👕</span>
+const Zap = ({ size }) => <span style={{ fontSize: size }}>⚡</span>
+const Activity = ({ size }) => <span style={{ fontSize: size }}>📊</span>
+const Calendar = ({ size }) => <span style={{ fontSize: size }}>📅</span>
 
 export default Dashboard

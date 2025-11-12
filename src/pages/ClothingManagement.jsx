@@ -117,14 +117,26 @@ const ClothingManagement = ({ refreshStats }) => {
   }
 
   const deleteClothing = async (id) => {
-    if (window.confirm('确定要删除这件服装吗？此操作不可恢复！')) {
+    if (window.confirm('确定要删除这件服装吗？此操作将同时删除相关的库存、销售记录和采购记录，不可恢复！')) {
       try {
-        await db.clothes.delete(id)
-        await db.inventory.where('clothingId').equals(id).delete()
-        loadClothes()
-        refreshStats()
+        // 开始事务处理，确保所有删除操作要么全部成功，要么全部失败
+        await db.transaction('rw', [db.clothes, db.inventory, db.stockOut, db.stockIn], async () => {
+          // 删除相关的销售记录
+          await db.stockOut.where('clothingId').equals(id).delete();
+          // 删除相关的采购记录
+          await db.stockIn.where('clothingId').equals(id).delete();
+          // 删除相关的库存记录
+          await db.inventory.where('clothingId').equals(id).delete();
+          // 删除服装本身
+          await db.clothes.delete(id);
+        });
+        
+        console.log('服装及相关数据已成功删除');
+        loadClothes();
+        refreshStats();
       } catch (error) {
-        console.error('删除服装失败:', error)
+        console.error('删除服装失败:', error);
+        window.alert('删除失败，请稍后重试');
       }
     }
   }

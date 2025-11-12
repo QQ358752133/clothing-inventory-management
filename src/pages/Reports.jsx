@@ -131,7 +131,7 @@ const Reports = () => {
             date,
             sales: data.sales,
             profit: data.profit,
-            quantity: data.count
+            quantity: data.quantity
           })),
           byProduct: Object.values(salesByProduct),
           total: totalSales,

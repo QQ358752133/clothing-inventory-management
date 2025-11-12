@@ -9,6 +9,7 @@ import StockOut from './pages/StockOut'
 import Inventory from './pages/Inventory'
 import Reports from './pages/Reports'
 import Settings from './pages/Settings'
+import DataViewer from './pages/DataViewer'
 import PWAInstallPrompt from './components/PWAInstallPrompt'
 import OfflineIndicator from './components/OfflineIndicator'
 import { db } from './db/database'
@@ -123,6 +124,10 @@ function App() {
               <Route 
                 path="/settings" 
                 element={<Settings />} 
+              />
+              <Route 
+                path="/data-viewer" 
+                element={<DataViewer />} 
               />
             </Routes>
           </main>

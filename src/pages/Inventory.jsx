@@ -5,11 +5,24 @@ import { db } from '../db/database'
 const Inventory = ({ refreshStats }) => {
   const [inventory, setInventory] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
-  const [lowStockThreshold, setLowStockThreshold] = useState(10)
+  const [lowStockThreshold, setLowStockThreshold] = useState(10) // 默认值
 
   useEffect(() => {
     loadInventory()
+    loadLowStockThreshold()
   }, [])
+  
+  // 从系统设置中加载低库存阈值
+  const loadLowStockThreshold = async () => {
+    try {
+      const setting = await db.settings.get({ key: 'lowStockThreshold' })
+      if (setting) {
+        setLowStockThreshold(setting.value)
+      }
+    } catch (error) {
+      console.error('加载低库存阈值失败:', error)
+    }
+  }
 
   const loadInventory = async () => {
     try {
@@ -69,23 +82,6 @@ const Inventory = ({ refreshStats }) => {
         </h1>
         
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <label style={{ fontSize: '14px', color: '#666' }}>低库存阈值:</label>
-            <input
-              type="number"
-              min="1"
-              value={lowStockThreshold}
-              onChange={(e) => setLowStockThreshold(parseInt(e.target.value) || 10)}
-              style={{
-                width: '80px',
-                padding: '8px',
-                border: '1px solid #e0e0e0',
-                borderRadius: '4px',
-                textAlign: 'center'
-              }}
-            />
-          </div>
-          
           <div style={{ position: 'relative' }}>
             <Search size={20} style={{
               position: 'absolute',
