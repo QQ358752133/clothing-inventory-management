@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据库检查工具</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1, h2 {
+            color: #2c3e50;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+        .tab {
+            padding: 10px 20px;
+            background: #e1e1e1;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        .tab.active {
+            background: #3498db;
+            color: white;
+        }
+        .panel {
+            display: none;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .panel.active {
+            display: block;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            max-height: 400px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        button {
+            padding: 8px 16px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .summary-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+        }
+        .summary-item h3 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+        .summary-item .value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .issues {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+        .issues h4 {
+            margin-top: 0;
+            color: #856404;
+        }
+        .issue-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        .issue-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .issue-list li:last-child {
+            border-bottom: none;
+        }
+        .issue-warning {
+            color: #856404;
+            font-weight: bold;
+        }
+        .issue-error {
+            color: #721c24;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>数据库检查工具</h1>
+    
+    <div class="tabs">
+        <button class="tab active" onclick="showPanel('summary')">数据概览</button>
+        <button class="tab" onclick="showPanel('stock-out')">出库记录</button>
+        <button class="tab" onclick="showPanel('clothes')">服装信息</button>
+        <button class="tab" onclick="showPanel('inventory')">库存信息</button>
+        <button class="tab" onclick="showPanel('settings')">系统设置</button>
+    </div>
+
+    <div id="summary" class="panel active">
+        <div id="summary-status" class="status">
+            <p>正在加载数据库信息...</p>
+        </div>
+        
+        <div class="summary">
+            <div class="summary-item">
+                <h3>出库记录总数</h3>
+                <div id="stock-out-count" class="value">--</div>
+            </div>
+            <div class="summary-item">
+                <h3>服装品类总数</h3>
+                <div id="clothes-count" class="value">--</div>
+            </div>
+            <div class="summary-item">
+                <h3>库存商品总数</h3>
+                <div id="inventory-count" class="value">--</div>
+            </div>
+            <div class="summary-item">
+                <h3>数据问题数量</h3>
+                <div id="issues-count" class="value">--</div>
+            </div>
+        </div>
+        
+        <button onclick="loadAllData()">重新加载数据</button>
+        
+        <div id="data-issues" class="issues" style="display: none;">
+            <h4>发现的数据问题</h4>
+            <ul id="issue-list" class="issue-list"></ul>
+        </div>
+    </div>
+
+    <div id="stock-out" class="panel">
+        <h2>出库记录详情</h2>
+        <button onclick="loadStockOutData()">加载出库记录</button>
+        <div id="stock-out-status" class="status" style="display: none;">
+            <p>正在加载出库记录...</p>
+        </div>
+        <pre id="stock-out-data">请点击上方按钮加载数据</pre>
+        
+        <div id="stock-out-issues" class="issues" style="display: none;">
+            <h4>出库记录中的问题</h4>
+            <ul id="stock-out-issue-list" class="issue-list"></ul>
+        </div>
+    </div>
+
+    <div id="clothes" class="panel">
+        <h2>服装信息详情</h2>
+        <button onclick="loadClothesData()">加载服装信息</button>
+        <pre id="clothes-data">请点击上方按钮加载数据</pre>
+    </div>
+
+    <div id="inventory" class="panel">
+        <h2>库存信息详情</h2>
+        <button onclick="loadInventoryData()">加载库存信息</button>
+        <pre id="inventory-data">请点击上方按钮加载数据</pre>
+    </div>
+
+    <div id="settings" class="panel">
+        <h2>系统设置</h2>
+        <button onclick="loadSettingsData()">加载系统设置</button>
+        <pre id="settings-data">请点击上方按钮加载数据</pre>
+    </div>
+
+    <script>
+        // Dexie.js CDN
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/dexie@3.2.4/dist/dexie.js';
+        script.onload = init;
+        document.head.appendChild(script);
+
+        let db;
+        let allIssues = [];
+
+        function init() {
+            // 初始化数据库连接
+            db = new Dexie('ClothingInventoryDB');
+            db.version(1).stores({
+                clothes: '++id, code, name, category, size, color, purchasePrice, sellingPrice, createdAt',
+                inventory: '++id, clothingId, quantity, updatedAt',
+                stockIn: '++id, clothingId, quantity, purchasePrice, totalAmount, date, operator, notes',
+                stockOut: '++id, clothingId, quantity, sellingPrice, totalAmount, date, operator, customer, notes'
+            });
+            
+            db.version(2).stores({
+                clothes: '++id, code, name, category, size, color, purchasePrice, sellingPrice, createdAt',
+                inventory: '++id, clothingId, quantity, updatedAt',
+                stockIn: '++id, clothingId, quantity, purchasePrice, totalAmount, date, operator, notes',
+                stockOut: '++id, clothingId, quantity, sellingPrice, totalAmount, date, operator, customer, notes',
+                settings: 'key, value'
+            });
+
+            // 自动加载数据
+            loadAllData();
+        }
+
+        function showPanel(panelId) {
+            // 隐藏所有面板
+            const panels = document.querySelectorAll('.panel');
+            panels.forEach(panel => panel.classList.remove('active'));
+            
+            // 移除所有标签的活动状态
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // 显示选中的面板和标签
+            document.getElementById(panelId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        async function loadAllData() {
+            const statusEl = document.getElementById('summary-status');
+            statusEl.className = 'status';
+            statusEl.innerHTML = '<p>正在加载数据库信息...</p>';
+            
+            allIssues = [];
+            
+            try {
+                // 获取各表数据数量
+                const stockOutCount = await db.stockOut.count();
+                const clothesCount = await db.clothes.count();
+                const inventoryCount = await db.inventory.count();
+                
+                // 更新计数显示
+                document.getElementById('stock-out-count').textContent = stockOutCount;
+                document.getElementById('clothes-count').textContent = clothesCount;
+                document.getElementById('inventory-count').textContent = inventoryCount;
+                
+                // 检查数据完整性
+                await checkDataIntegrity();
+                
+                // 更新问题计数
+                document.getElementById('issues-count').textContent = allIssues.length;
+                
+                // 显示问题列表
+                const issuesContainer = document.getElementById('data-issues');
+                const issueList = document.getElementById('issue-list');
+                
+                if (allIssues.length > 0) {
+                    issuesContainer.style.display = 'block';
+                    issueList.innerHTML = '';
+                    
+                    allIssues.forEach(issue => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<span class="${issue.type === 'error' ? 'issue-error' : 'issue-warning'}">${issue.type === 'error' ? '错误' : '警告'}:</span> ${issue.message}`;
+                        issueList.appendChild(li);
+                    });
+                    
+                    statusEl.className = 'status warning';
+                    statusEl.innerHTML = `<p>发现 ${allIssues.length} 个数据问题，请查看详情。</p>`;
+                } else {
+                    issuesContainer.style.display = 'none';
+                    statusEl.className = 'status success';
+                    statusEl.innerHTML = '<p>数据库检查完成，未发现明显问题。</p>';
+                }
+                
+            } catch (error) {
+                statusEl.className = 'status error';
+                statusEl.innerHTML = `<p>数据库检查失败: ${error.message}</p>`;
+                console.error('数据库检查失败:', error);
+            }
+        }
+
+        async function checkDataIntegrity() {
+            // 检查出库记录
+            const stockOutRecords = await db.stockOut.toArray();
+            const clothes = await db.clothes.toArray();
+            const clothesMap = new Map(clothes.map(c => [c.id, c]));
+            
+            stockOutRecords.forEach((record, index) => {
+                // 检查必要字段
+                if (!record.clothingId) {
+                    allIssues.push({
+                        type: 'error',
+                        message: `出库记录 #${index + 1} 缺少服装ID`
+                    });
+                } else if (!record.quantity || record.quantity <= 0) {
+                    allIssues.push({
+                        type: 'error',
+                        message: `出库记录 #${index + 1} 数量无效或为0`
+                    });
+                } else if (!record.totalAmount || record.totalAmount <= 0) {
+                    allIssues.push({
+                        type: 'error',
+                        message: `出库记录 #${index + 1} 总金额无效或为0`
+                    });
+                } else if (!record.date) {
+                    allIssues.push({
+                        type: 'warning',
+                        message: `出库记录 #${index + 1} 缺少日期`
+                    });
+                }
+                
+                // 检查是否有对应的服装信息
+                if (record.clothingId && !clothesMap.has(record.clothingId)) {
+                    allIssues.push({
+                        type: 'warning',
+                        message: `出库记录 #${index + 1} 找不到对应的服装信息 (ID: ${record.clothingId})`
+                    });
+                } else if (record.clothingId && clothesMap.has(record.clothingId)) {
+                    const clothing = clothesMap.get(record.clothingId);
+                    // 检查销售价格是否合理
+                    if (!record.sellingPrice || record.sellingPrice <= 0) {
+                        allIssues.push({
+                            type: 'warning',
+                            message: `出库记录 #${index + 1} 销售价格无效或为0`
+                        });
+                    } else if (clothing.purchasePrice && record.sellingPrice < clothing.purchasePrice * 0.8) {
+                        allIssues.push({
+                            type: 'warning',
+                            message: `出库记录 #${index + 1} 销售价格异常偏低 (销售: ¥${record.sellingPrice}, 采购: ¥${clothing.purchasePrice})`
+                        });
+                    }
+                    
+                    // 检查总金额计算是否正确
+                    if (record.sellingPrice && Math.abs(record.totalAmount - (record.quantity * record.sellingPrice)) > 0.01) {
+                        allIssues.push({
+                            type: 'warning',
+                            message: `出库记录 #${index + 1} 总金额计算不一致 (应为: ¥${(record.quantity * record.sellingPrice).toFixed(2)}, 实际: ¥${record.totalAmount})`
+                        });
+                    }
+                }
+            });
+            
+            // 检查服装信息
+            clothes.forEach((clothing, index) => {
+                if (!clothing.purchasePrice || clothing.purchasePrice <= 0) {
+                    allIssues.push({
+                        type: 'warning',
+                        message: `服装 #${index + 1} (${clothing.name || '未命名'}) 缺少采购价格`
+                    });
+                }
+                if (!clothing.sellingPrice || clothing.sellingPrice <= 0) {
+                    allIssues.push({
+                        type: 'warning',
+                        message: `服装 #${index + 1} (${clothing.name || '未命名'}) 缺少销售价格`
+                    });
+                }
+            });
+        }
+
+        async function loadStockOutData() {
+            const statusEl = document.getElementById('stock-out-status');
+            const dataEl = document.getElementById('stock-out-data');
+            const issuesContainer = document.getElementById('stock-out-issues');
+            const issueList = document.getElementById('stock-out-issue-list');
+            
+            statusEl.style.display = 'block';
+            statusEl.className = 'status';
+            statusEl.innerHTML = '<p>正在加载出库记录...</p>';
+            dataEl.textContent = '加载中...';
+            issuesContainer.style.display = 'none';
+            
+            try {
+                const [stockOutRecords, clothes] = await Promise.all([
+                    db.stockOut.toArray(),
+                    db.clothes.toArray()
+                ]);
+                
+                const clothesMap = new Map(clothes.map(c => [c.id, c]));
+                const recordsWithDetails = stockOutRecords.map(record => {
+                    const clothing = clothesMap.get(record.clothingId);
+                    return {
+                        ...record,
+                        clothingInfo: clothing ? {
+                            name: clothing.name,
+                            code: clothing.code,
+                            purchasePrice: clothing.purchasePrice
+                        } : null
+                    };
+                });
+                
+                dataEl.textContent = JSON.stringify(recordsWithDetails, null, 2);
+                statusEl.style.display = 'none';
+                
+                // 检查并显示出库记录中的问题
+                const stockOutIssues = [];
+                recordsWithDetails.forEach((record, index) => {
+                    if (!record.totalAmount || record.totalAmount <= 0) {
+                        stockOutIssues.push(`记录 #${index + 1}: 总金额无效或为0`);
+                    }
+                    if (!record.quantity || record.quantity <= 0) {
+                        stockOutIssues.push(`记录 #${index + 1}: 数量无效或为0`);
+                    }
+                    if (!record.clothingInfo) {
+                        stockOutIssues.push(`记录 #${index + 1}: 找不到对应的服装信息`);
+                    }
+                });
+                
+                if (stockOutIssues.length > 0) {
+                    issuesContainer.style.display = 'block';
+                    issueList.innerHTML = '';
+                    stockOutIssues.forEach(issue => {
+                        const li = document.createElement('li');
+                        li.textContent = issue;
+                        issueList.appendChild(li);
+                    });
+                }
+                
+            } catch (error) {
+                statusEl.className = 'status error';
+                statusEl.innerHTML = `<p>加载失败: ${error.message}</p>`;
+                dataEl.textContent = `错误: ${error.message}`;
+                console.error('加载出库记录失败:', error);
+            }
+        }
+
+        async function loadClothesData() {
+            const dataEl = document.getElementById('clothes-data');
+            dataEl.textContent = '加载中...';
+            
+            try {
+                const clothes = await db.clothes.toArray();
+                dataEl.textContent = JSON.stringify(clothes, null, 2);
+            } catch (error) {
+                dataEl.textContent = `错误: ${error.message}`;
+                console.error('加载服装信息失败:', error);
+            }
+        }
+
+        async function loadInventoryData() {
+            const dataEl = document.getElementById('inventory-data');
+            dataEl.textContent = '加载中...';
+            
+            try {
+                const [inventory, clothes] = await Promise.all([
+                    db.inventory.toArray(),
+                    db.clothes.toArray()
+                ]);
+                
+                const clothesMap = new Map(clothes.map(c => [c.id, c]));
+                const inventoryWithDetails = inventory.map(item => ({
+                    ...item,
+                    clothingInfo: clothesMap.get(item.clothingId)
+                }));
+                
+                dataEl.textContent = JSON.stringify(inventoryWithDetails, null, 2);
+            } catch (error) {
+                dataEl.textContent = `错误: ${error.message}`;
+                console.error('加载库存信息失败:', error);
+            }
+        }
+
+        async function loadSettingsData() {
+            const dataEl = document.getElementById('settings-data');
+            dataEl.textContent = '加载中...';
+            
+            try {
+                const settings = await db.settings.toArray();
+                dataEl.textContent = JSON.stringify(settings, null, 2);
+            } catch (error) {
+                dataEl.textContent = `错误: ${error.message}`;
+                console.error('加载系统设置失败:', error);
+            }
+        }
+    </script>
+</body>
+</html>

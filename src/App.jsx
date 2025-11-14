@@ -15,7 +15,7 @@ import OfflineIndicator from './components/OfflineIndicator'
 import { db } from './db/database'
 
 function App() {
-  const [activeTab, setActiveTab] = useState('dashboard')
+  // Active tab state removed as menu is no longer needed
   const [inventoryStats, setInventoryStats] = useState({
     totalClothes: 0,
     totalValue: 0,
@@ -69,12 +69,12 @@ function App() {
         <OfflineIndicator />
         <Header />
         <div className="app-content">
-          <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
+          <Navigation />
           <main className="main-content">
             <Routes>
               <Route 
                 path="/" 
-                element={<Navigate to="/dashboard" replace />} 
+                element={<Navigate to="/stock-out" replace />} 
               />
               <Route 
                 path="/dashboard" 

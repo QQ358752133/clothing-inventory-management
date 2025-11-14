@@ -1,18 +1,90 @@
 import React, { useState, useEffect } from 'react'
 import { Plus, PackageMinus, Search, Trash2, Calculator } from 'lucide-react'
 import { db } from '../db/database'
+import Alert from '../components/Alert'
+
+// 播放成功提示音 - 支持自定义音频文件
+const playSuccessSound = () => {
+  try {
+    // 尝试使用自定义音频文件
+    const audio = new Audio('/audio/success.mp3')
+    audio.volume = 0.1
+    
+    // 如果音频加载失败，则回退到Web Audio API生成的音效
+    audio.onerror = () => {
+      console.log('自定义音频文件未找到，使用默认音效')
+      playDefaultSuccessSound()
+    }
+    
+    audio.play()
+  } catch (error) {
+    console.error('播放自定义音频失败，使用默认音效:', error)
+    playDefaultSuccessSound()
+  }
+}
+
+// 默认的成功提示音 - 叮咚音效
+const playDefaultSuccessSound = () => {
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+    
+    // 生成"叮"的声音 (高音)
+    const dingOscillator = audioContext.createOscillator()
+    const dingGain = audioContext.createGain()
+    dingOscillator.connect(dingGain)
+    dingGain.connect(audioContext.destination)
+    
+    dingOscillator.type = 'sine'
+    dingOscillator.frequency.setValueAtTime(1000, audioContext.currentTime)
+    dingOscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.1)
+    
+    dingGain.gain.setValueAtTime(0.1, audioContext.currentTime)
+    dingGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1)
+    
+    dingOscillator.start(audioContext.currentTime)
+    dingOscillator.stop(audioContext.currentTime + 0.1)
+    
+    // 生成"咚"的声音 (低音)
+    const dongOscillator = audioContext.createOscillator()
+    const dongGain = audioContext.createGain()
+    dongOscillator.connect(dongGain)
+    dongGain.connect(audioContext.destination)
+    
+    dongOscillator.type = 'sine'
+    dongOscillator.frequency.setValueAtTime(500, audioContext.currentTime + 0.15)
+    dongOscillator.frequency.exponentialRampToValueAtTime(300, audioContext.currentTime + 0.3)
+    
+    dongGain.gain.setValueAtTime(0.1, audioContext.currentTime + 0.15)
+    dongGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3)
+    
+    dongOscillator.start(audioContext.currentTime + 0.15)
+    dongOscillator.stop(audioContext.currentTime + 0.3)
+  } catch (error) {
+    console.error('播放默认声音失败:', error)
+  }
+}
 
 const StockOut = ({ refreshStats }) => {
   const [clothes, setClothes] = useState([])
   const [inventory, setInventory] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
-  const [stockOutItems, setStockOutItems] = useState([])
+  // 默认展开销售项目部，添加一个空的销售项目
+  const [stockOutItems, setStockOutItems] = useState([{
+    id: Date.now(),
+    clothingId: '',
+    quantity: 1,
+    sellingPrice: 0,
+    availableQuantity: 0
+  }])
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
-    operator: '店长',
-    customer: '',
+    operator: '店长-符文静',
     notes: ''
   })
+  
+  // 自定义弹窗状态
+  const [alertMessage, setAlertMessage] = useState('')
+  const [alertType, setAlertType] = useState('success')
 
   useEffect(() => {
     loadData()
@@ -52,7 +124,7 @@ const StockOut = ({ refreshStats }) => {
           const inventoryItem = inventory.find(inv => inv.clothingId === parseInt(value))
           
           if (selectedClothing) {
-            updatedItem.sellingPrice = selectedClothing.sellingPrice
+            updatedItem.sellingPrice = parseFloat(parseFloat(selectedClothing.sellingPrice).toFixed(2))
             updatedItem.availableQuantity = inventoryItem ? inventoryItem.quantity : 0
           }
         }
@@ -108,11 +180,10 @@ const StockOut = ({ refreshStats }) => {
         await db.stockOut.add({
           clothingId: parseInt(item.clothingId),
           quantity: parseInt(item.quantity),
-          sellingPrice: parseFloat(item.sellingPrice),
+          sellingPrice: parseFloat(parseFloat(item.sellingPrice).toFixed(2)), // 确保价格精度
           totalAmount: calculatedTotalAmount, // 使用精确计算的总金额
           date: formData.date,
           operator: formData.operator || '未知操作员',
-          customer: formData.customer || '',
           notes: formData.notes || '',
           createdAt: new Date(),
           updatedAt: new Date() // 添加更新时间字段，便于后续管理
@@ -137,20 +208,28 @@ const StockOut = ({ refreshStats }) => {
         }
       }
       
-      // 重置表单
-      setStockOutItems([])
+      // 重置表单，但保留操作员信息，并默认展开销售项目部
+      setStockOutItems([{
+        id: Date.now(),
+        clothingId: '',
+        quantity: 1,
+        sellingPrice: 0,
+        availableQuantity: 0
+      }])
       setFormData({
         date: new Date().toISOString().split('T')[0],
-        operator: '',
-        customer: '',
+        operator: formData.operator, // 保留操作员信息
         notes: ''
       })
       
-      alert(`出库操作成功完成！销售总额：¥${calculateTotalAmount().toFixed(2)}`)
+      setAlertMessage(`出库操作成功完成！销售总额：¥${calculateTotalAmount().toFixed(2)}`)
+      setAlertType('success')
+      playSuccessSound() // 播放成功提示音
       refreshStats()
     } catch (error) {
       console.error('出库操作失败:', error)
-      alert('出库操作失败，请重试')
+      setAlertMessage('出库操作失败，请重试')
+      setAlertType('error')
     }
   }
 
@@ -184,6 +263,11 @@ const StockOut = ({ refreshStats }) => {
 
   return (
     <div className="container">
+      <Alert
+        message={alertMessage}
+        type={alertType}
+        onClose={() => setAlertMessage('')}
+      />
       <div style={{
         display: 'flex',
         alignItems: 'center',
@@ -239,16 +323,7 @@ const StockOut = ({ refreshStats }) => {
               />
             </div>
             
-            <div className="form-group">
-              <label className="form-label">客户信息</label>
-              <input
-                type="text"
-                value={formData.customer}
-                onChange={(e) => setFormData({...formData, customer: e.target.value})}
-                className="form-input"
-                placeholder="输入客户姓名（可选）"
-              />
-            </div>
+            
           </div>
 
           {/* 搜索有库存的服装 */}
@@ -260,9 +335,13 @@ const StockOut = ({ refreshStats }) => {
                 left: '12px',
                 top: '50%',
                 transform: 'translateY(-50%)',
-                color: '#999'
-              }} />
+                color: '#999',
+                cursor: 'pointer'
+              }} 
+                onClick={() => document.getElementById('stock-out-search').focus()}
+              />
               <input
+                id="stock-out-search"
                 type="text"
                 placeholder="搜索服装名称或编码..."
                 value={searchTerm}
@@ -323,7 +402,7 @@ const StockOut = ({ refreshStats }) => {
                     padding: '16px',
                     border: '1px solid #e0e0e0'
                   }}>
-                    <div style={{
+                    <div style={{ 
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
@@ -334,7 +413,15 @@ const StockOut = ({ refreshStats }) => {
                         type="button"
                         onClick={() => removeStockOutItem(item.id)}
                         className="btn btn-danger"
-                        style={{ padding: '8px', minHeight: 'auto' }}
+                        style={{ 
+                          padding: '8px', 
+                          minHeight: 'auto',
+                          width: '36px',
+                          height: '36px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
                       >
                         <Trash2 size={14} />
                       </button>
@@ -467,11 +554,17 @@ const StockOut = ({ refreshStats }) => {
             <button 
               type="button"
               onClick={() => {
-                setStockOutItems([])
+                // 重置表单，默认展开销售项目部
+                setStockOutItems([{
+                  id: Date.now(),
+                  clothingId: '',
+                  quantity: 1,
+                  sellingPrice: 0,
+                  availableQuantity: 0
+                }])
                 setFormData({
                   date: new Date().toISOString().split('T')[0],
                   operator: '',
-                  customer: '',
                   notes: ''
                 })
               }}

@@ -364,28 +364,92 @@ const Reports = () => {
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table className="table">
+            <table className="table" style={{ 
+              width: '100%', 
+              borderCollapse: 'collapse',
+              fontSize: '14px'
+            }}>
               <thead>
-                <tr>
-                  <th>日期</th>
-                  <th>销售数量</th>
-                  <th>销售金额</th>
-                  <th>销售利润</th>
-                  <th>利润率</th>
+                <tr style={{ 
+                  backgroundColor: '#f5f7fa',
+                  borderBottom: '2px solid #e4e7ed'
+                }}>
+                  <th style={{ 
+                    padding: '12px 16px', 
+                    textAlign: 'left', 
+                    fontWeight: '600',
+                    color: '#303133',
+                    borderBottom: '1px solid #e4e7ed'
+                  }}>日期</th>
+                  <th style={{ 
+                    padding: '12px 16px', 
+                    textAlign: 'center', 
+                    fontWeight: '600',
+                    color: '#303133',
+                    borderBottom: '1px solid #e4e7ed'
+                  }}>销售数量</th>
+                  <th style={{ 
+                    padding: '12px 16px', 
+                    textAlign: 'right', 
+                    fontWeight: '600',
+                    color: '#303133',
+                    borderBottom: '1px solid #e4e7ed'
+                  }}>销售金额</th>
+                  <th style={{ 
+                    padding: '12px 16px', 
+                    textAlign: 'right', 
+                    fontWeight: '600',
+                    color: '#303133',
+                    borderBottom: '1px solid #e4e7ed'
+                  }}>销售利润</th>
+                  <th style={{ 
+                    padding: '12px 16px', 
+                    textAlign: 'center', 
+                    fontWeight: '600',
+                    color: '#303133',
+                    borderBottom: '1px solid #e4e7ed'
+                  }}>利润率</th>
                 </tr>
               </thead>
               <tbody>
                 {reports.sales.byDate.map((item, index) => (
-                  <tr key={index}>
-                    <td>{item.date}</td>
-                    <td style={{ fontWeight: '600' }}>{item.quantity} 件</td>
-                    <td style={{ color: '#4CAF50', fontWeight: '600' }}>
+                  <tr key={index} style={{ 
+                    borderBottom: '1px solid #ebeef5',
+                    transition: 'background-color 0.2s'
+                  }} onMouseEnter={(e) => e.target.style.backgroundColor = '#f0f2f5'} onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}>
+                    <td style={{ 
+                      padding: '12px 16px', 
+                      textAlign: 'left',
+                      color: '#303133'
+                    }}>{item.date}</td>
+                    <td style={{ 
+                      padding: '12px 16px', 
+                      textAlign: 'center',
+                      fontWeight: '600',
+                      color: '#303133'
+                    }}>{item.quantity} 件</td>
+                    <td style={{ 
+                      padding: '12px 16px', 
+                      textAlign: 'right',
+                      color: '#4CAF50', 
+                      fontWeight: '600'
+                    }}>
                       {formatCurrency(item.sales)}
                     </td>
-                    <td style={{ color: '#FF9800', fontWeight: '600' }}>
+                    <td style={{ 
+                      padding: '12px 16px', 
+                      textAlign: 'right',
+                      color: '#FF9800', 
+                      fontWeight: '600'
+                    }}>
                       {formatCurrency(item.profit)}
                     </td>
-                    <td style={{ color: '#2196F3', fontWeight: '600' }}>
+                    <td style={{ 
+                      padding: '12px 16px', 
+                      textAlign: 'center',
+                      color: '#2196F3', 
+                      fontWeight: '600'
+                    }}>
                       {item.sales > 0 ? ((item.profit / item.sales) * 100).toFixed(1) : 0}%
                     </td>
                   </tr>
@@ -424,15 +488,58 @@ const Reports = () => {
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table className="table">
+            <table className="table" style={{ 
+              width: '100%', 
+              borderCollapse: 'collapse',
+              fontSize: '14px'
+            }}>
               <thead>
-                <tr>
-                  <th>排名</th>
-                  <th>商品编码</th>
-                  <th>商品名称</th>
-                  <th>销售数量</th>
-                  <th>销售金额</th>
-                  <th>销售利润</th>
+                <tr style={{ 
+                  backgroundColor: '#f5f7fa',
+                  borderBottom: '2px solid #e4e7ed'
+                }}>
+                  <th style={{ 
+                    padding: '12px 16px', 
+                    textAlign: 'center', 
+                    fontWeight: '600',
+                    color: '#303133',
+                    borderBottom: '1px solid #e4e7ed'
+                  }}>排名</th>
+                  <th style={{ 
+                    padding: '12px 16px', 
+                    textAlign: 'left', 
+                    fontWeight: '600',
+                    color: '#303133',
+                    borderBottom: '1px solid #e4e7ed'
+                  }}>商品编码</th>
+                  <th style={{ 
+                    padding: '12px 16px', 
+                    textAlign: 'left', 
+                    fontWeight: '600',
+                    color: '#303133',
+                    borderBottom: '1px solid #e4e7ed'
+                  }}>商品名称</th>
+                  <th style={{ 
+                    padding: '12px 16px', 
+                    textAlign: 'center', 
+                    fontWeight: '600',
+                    color: '#303133',
+                    borderBottom: '1px solid #e4e7ed'
+                  }}>销售数量</th>
+                  <th style={{ 
+                    padding: '12px 16px', 
+                    textAlign: 'right', 
+                    fontWeight: '600',
+                    color: '#303133',
+                    borderBottom: '1px solid #e4e7ed'
+                  }}>销售金额</th>
+                  <th style={{ 
+                    padding: '12px 16px', 
+                    textAlign: 'right', 
+                    fontWeight: '600',
+                    color: '#303133',
+                    borderBottom: '1px solid #e4e7ed'
+                  }}>销售利润</th>
                 </tr>
               </thead>
               <tbody>
@@ -440,17 +547,49 @@ const Reports = () => {
                   .sort((a, b) => b.sales - a.sales)
                   .slice(0, 10)
                   .map((item, index) => (
-                    <tr key={index}>
-                      <td style={{ fontWeight: '600', color: index < 3 ? '#FF9800' : '#666' }}>
+                    <tr key={index} style={{ 
+                      borderBottom: '1px solid #ebeef5',
+                      transition: 'background-color 0.2s'
+                    }} onMouseEnter={(e) => e.target.style.backgroundColor = '#f0f2f5'} onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}>
+                      <td style={{ 
+                        padding: '12px 16px', 
+                        textAlign: 'center',
+                        fontWeight: '600', 
+                        color: index < 3 ? '#FF9800' : '#666'
+                      }}>
                         #{index + 1}
                       </td>
-                      <td style={{ fontWeight: '600' }}>{item.code}</td>
-                      <td>{item.name}</td>
-                      <td style={{ fontWeight: '600' }}>{item.quantity} 件</td>
-                      <td style={{ color: '#4CAF50', fontWeight: '600' }}>
+                      <td style={{ 
+                        padding: '12px 16px', 
+                        textAlign: 'left',
+                        fontWeight: '600',
+                        color: '#303133'
+                      }}>{item.code}</td>
+                      <td style={{ 
+                        padding: '12px 16px', 
+                        textAlign: 'left',
+                        color: '#303133'
+                      }}>{item.name}</td>
+                      <td style={{ 
+                        padding: '12px 16px', 
+                        textAlign: 'center',
+                        fontWeight: '600',
+                        color: '#303133'
+                      }}>{item.quantity} 件</td>
+                      <td style={{ 
+                        padding: '12px 16px', 
+                        textAlign: 'right',
+                        color: '#4CAF50', 
+                        fontWeight: '600'
+                      }}>
                         {formatCurrency(item.sales)}
                       </td>
-                      <td style={{ color: '#FF9800', fontWeight: '600' }}>
+                      <td style={{ 
+                        padding: '12px 16px', 
+                        textAlign: 'right',
+                        color: '#FF9800', 
+                        fontWeight: '600'
+                      }}>
                         {formatCurrency(item.profit)}
                       </td>
                     </tr>
@@ -489,20 +628,62 @@ const Reports = () => {
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table className="table">
+            <table className="table" style={{ 
+              width: '100%', 
+              borderCollapse: 'collapse',
+              fontSize: '14px'
+            }}>
               <thead>
-                <tr>
-                  <th>日期</th>
-                  <th>采购数量</th>
-                  <th>采购金额</th>
+                <tr style={{ 
+                  backgroundColor: '#f5f7fa',
+                  borderBottom: '2px solid #e4e7ed'
+                }}>
+                  <th style={{ 
+                    padding: '12px 16px', 
+                    textAlign: 'left', 
+                    fontWeight: '600',
+                    color: '#303133',
+                    borderBottom: '1px solid #e4e7ed'
+                  }}>日期</th>
+                  <th style={{ 
+                    padding: '12px 16px', 
+                    textAlign: 'center', 
+                    fontWeight: '600',
+                    color: '#303133',
+                    borderBottom: '1px solid #e4e7ed'
+                  }}>采购数量</th>
+                  <th style={{ 
+                    padding: '12px 16px', 
+                    textAlign: 'right', 
+                    fontWeight: '600',
+                    color: '#303133',
+                    borderBottom: '1px solid #e4e7ed'
+                  }}>采购金额</th>
                 </tr>
               </thead>
               <tbody>
                 {reports.purchases.byDate.map((item, index) => (
-                  <tr key={index}>
-                    <td>{item.date}</td>
-                    <td style={{ fontWeight: '600' }}>{item.quantity} 件</td>
-                    <td style={{ color: '#2196F3', fontWeight: '600' }}>
+                  <tr key={index} style={{ 
+                    borderBottom: '1px solid #ebeef5',
+                    transition: 'background-color 0.2s'
+                  }} onMouseEnter={(e) => e.target.style.backgroundColor = '#f0f2f5'} onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}>
+                    <td style={{ 
+                      padding: '12px 16px', 
+                      textAlign: 'left',
+                      color: '#303133'
+                    }}>{item.date}</td>
+                    <td style={{ 
+                      padding: '12px 16px', 
+                      textAlign: 'center',
+                      fontWeight: '600',
+                      color: '#303133'
+                    }}>{item.quantity} 件</td>
+                    <td style={{ 
+                      padding: '12px 16px', 
+                      textAlign: 'right',
+                      color: '#2196F3', 
+                      fontWeight: '600'
+                    }}>
                       {formatCurrency(item.amount)}
                     </td>
                   </tr>

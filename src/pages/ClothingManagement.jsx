@@ -1,155 +1,258 @@
 import React, { useState, useEffect } from 'react'
-import { Plus, Search, Edit, Trash2, Shirt } from 'lucide-react'
+import { Edit, Trash2, Shirt, Search, Plus, ChevronDown, ChevronUp } from 'lucide-react'
 import { db } from '../db/database'
 import { useMediaQuery } from '../hooks/useMediaQuery'
+import Alert from '../components/Alert'
 
 const ClothingManagement = ({ refreshStats }) => {
-  const isMobile = useMediaQuery('(max-width: 768px)')
   const [clothes, setClothes] = useState([])
+  const [isLoading, setIsLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
-  const [showForm, setShowForm] = useState(false)
   const [editingClothing, setEditingClothing] = useState(null)
+  const [editingInventory, setEditingInventory] = useState(null)
+  const [alertMessage, setAlertMessage] = useState('')
+  const [alertType, setAlertType] = useState('success')
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [expandedCards, setExpandedCards] = useState({})
   const [formData, setFormData] = useState({
     code: '',
     name: '',
     category: '',
     size: '',
     color: '',
-    customColor: '',
-    categoryCustom: '',
     purchasePrice: '',
-    sellingPrice: ''
+    sellingPrice: '',
+    quantity: ''
   })
+  const [customColor, setCustomColor] = useState('')
+  const [categoryCustom, setCategoryCustom] = useState('')
+  
+  // 使用媒体查询检测移动设备
+  const isMobile = useMediaQuery('(max-width: 768px)')
+  const [isTablet, setIsTablet] = useState(false)
 
   useEffect(() => {
     loadClothes()
+    
+    // 检测是否为平板设备
+    const checkTablet = () => {
+      setIsTablet(window.innerWidth > 768 && window.innerWidth <= 1024)
+    }
+    
+    checkTablet()
+    window.addEventListener('resize', checkTablet)
+    return () => window.removeEventListener('resize', checkTablet)
   }, [])
 
   const loadClothes = async () => {
     try {
       const allClothes = await db.clothes.toArray()
-      setClothes(allClothes)
+      // 加载每个商品的库存信息
+      const clothesWithInventory = await Promise.all(
+        allClothes.map(async (clothing) => {
+          const inventory = await db.inventory
+            .where('clothingId')
+            .equals(clothing.id)
+            .toArray()
+          return {
+            ...clothing,
+            inventory: inventory
+          }
+        })
+      )
+      setClothes(clothesWithInventory)
     } catch (error) {
       console.error('加载服装数据失败:', error)
+      setAlertMessage('加载服装数据失败')
+      setAlertType('error')
     }
+  }
+
+  const handleFormChange = (e) => {
+    const { name, value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }))
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
-      // 处理自定义颜色
-      const finalColor = (formData.color === '其他' && formData.customColor) ? formData.customColor : formData.color
-      // 处理自定义品类
-      const finalCategory = (formData.category === '其他' && formData.categoryCustom) ? formData.categoryCustom : formData.category
+      setIsLoading(true)
       
+      // 验证必填字段
+      if (!formData.code || !formData.name || !formData.category || !formData.size || !formData.color) {
+        setAlertMessage('请填写所有必填字段')
+        setAlertType('error')
+        return
+      }
+
       if (editingClothing) {
-        // 更新服装信息
+        // 更新现有商品，确保价格精度
         await db.clothes.update(editingClothing.id, {
-          ...formData,
-          color: finalColor,
-          category: finalCategory,
-          purchasePrice: parseFloat(formData.purchasePrice),
-          sellingPrice: parseFloat(formData.sellingPrice),
-          updatedAt: new Date()
+          code: formData.code,
+          name: formData.name,
+          category: formData.category,
+          size: formData.size,
+          color: formData.color,
+          purchasePrice: parseFloat(parseFloat(formData.purchasePrice).toFixed(2)) || 0,
+          sellingPrice: parseFloat(parseFloat(formData.sellingPrice).toFixed(2)) || 0,
+          updatedAt: new Date().toISOString()
         })
+        setAlertMessage('商品信息已更新')
+        
+        // 如果同时编辑库存
+        if (editingInventory) {
+          await db.inventory.update(editingInventory.id, {
+            quantity: parseInt(formData.quantity) || 0,
+            updatedAt: new Date().toISOString()
+          })
+          setAlertMessage('商品信息和库存已更新')
+        }
       } else {
-        // 新增服装
-        await db.clothes.add({
-          ...formData,
-          color: finalColor,
-          category: finalCategory,
-          purchasePrice: parseFloat(formData.purchasePrice),
-          sellingPrice: parseFloat(formData.sellingPrice),
-          createdAt: new Date(),
-          updatedAt: new Date()
+        // 创建新商品
+        const newClothing = await db.clothes.add({
+          code: formData.code,
+          name: formData.name,
+          category: formData.category,
+          size: formData.size,
+          color: formData.color,
+          purchasePrice: parseFloat(parseFloat(formData.purchasePrice).toFixed(2)) || 0,
+          sellingPrice: parseFloat(parseFloat(formData.sellingPrice).toFixed(2)) || 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         })
         
-        // 初始化库存
+        // 创建库存记录
         await db.inventory.add({
-          clothingId: await db.clothes.toCollection().lastKey(),
-          quantity: 0,
-          updatedAt: new Date()
+          clothingId: newClothing,
+          quantity: parseInt(formData.quantity) || 0,
+          type: 'stock-in',
+          reason: '初始库存',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         })
+        
+        setAlertMessage('商品已添加')
       }
       
-      resetForm()
+      // 重置表单和状态
+      setFormData({
+        code: '',
+        name: '',
+        category: '',
+        size: '',
+        color: '',
+        purchasePrice: '',
+        sellingPrice: '',
+        quantity: ''
+      })
+      setEditingClothing(null)
+      setEditingInventory(null)
+      setShowAddForm(false)
+      
+      // 重新加载数据
       loadClothes()
-      refreshStats()
+      if (refreshStats) refreshStats()
     } catch (error) {
-      console.error('保存服装信息失败:', error)
+      console.error('保存商品失败:', error)
+      setAlertMessage('保存商品失败')
+      setAlertType('error')
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const resetForm = () => {
+  const handleEdit = (clothing) => {
+    setEditingClothing(clothing)
+    // 获取第一个库存记录（假设一个商品只有一个库存记录）
+    const inventory = clothing.inventory && clothing.inventory.length > 0 ? clothing.inventory[0] : null
+    setEditingInventory(inventory)
+    setFormData({
+      code: clothing.code,
+      name: clothing.name,
+      category: clothing.category,
+      size: clothing.size,
+      color: clothing.color,
+      purchasePrice: clothing.purchasePrice ? clothing.purchasePrice.toString() : '',
+      sellingPrice: clothing.sellingPrice ? clothing.sellingPrice.toString() : '',
+      quantity: inventory ? inventory.quantity.toString() : '0'
+    })
+    setShowAddForm(true)
+  }
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('确定要删除这个商品吗？')) {
+      return
+    }
+    
+    try {
+      setIsLoading(true)
+      
+      // 删除商品
+      await db.clothes.delete(id)
+      
+      // 删除关联的库存记录
+      await db.inventory.where('clothingId').equals(id).delete()
+      
+      // 更新状态
+      setClothes(prev => prev.filter(clothing => clothing.id !== id))
+      setAlertMessage('商品已删除')
+      
+      if (refreshStats) refreshStats()
+    } catch (error) {
+      console.error('删除商品失败:', error)
+      setAlertMessage('删除商品失败')
+      setAlertType('error')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleCancel = () => {
     setFormData({
       code: '',
       name: '',
       category: '',
       size: '',
       color: '',
-      customColor: '',
-      categoryCustom: '',
       purchasePrice: '',
-      sellingPrice: ''
+      sellingPrice: '',
+      quantity: ''
     })
     setEditingClothing(null)
-    setShowForm(false)
+    setEditingInventory(null)
+    setShowAddForm(false)
   }
 
-  const editClothing = (clothing) => {
-    // 判断是否是自定义颜色
-    const isCustomColor = !colors.includes(clothing.color)
-    // 判断是否是自定义品类
-    const isCustomCategory = !categories.includes(clothing.category)
-    setFormData({
-      code: clothing.code,
-      name: clothing.name,
-      category: isCustomCategory ? '其他' : clothing.category || '',
-      size: clothing.size,
-      color: isCustomColor ? '其他' : clothing.color,
-      customColor: isCustomColor ? clothing.color : '',
-      categoryCustom: isCustomCategory ? clothing.category : '',
-      purchasePrice: clothing.purchasePrice,
-      sellingPrice: clothing.sellingPrice
-    })
-    setEditingClothing(clothing)
-    setShowForm(true)
+  const toggleCard = (id) => {
+    setExpandedCards(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }))
   }
 
-  const deleteClothing = async (id) => {
-    if (window.confirm('确定要删除这件服装吗？此操作将同时删除相关的库存、销售记录和采购记录，不可恢复！')) {
-      try {
-        // 开始事务处理，确保所有删除操作要么全部成功，要么全部失败
-        await db.transaction('rw', [db.clothes, db.inventory, db.stockOut, db.stockIn], async () => {
-          // 删除相关的销售记录
-          await db.stockOut.where('clothingId').equals(id).delete();
-          // 删除相关的采购记录
-          await db.stockIn.where('clothingId').equals(id).delete();
-          // 删除相关的库存记录
-          await db.inventory.where('clothingId').equals(id).delete();
-          // 删除服装本身
-          await db.clothes.delete(id);
-        });
-        
-        console.log('服装及相关数据已成功删除');
-        loadClothes();
-        refreshStats();
-      } catch (error) {
-        console.error('删除服装失败:', error);
-        window.alert('删除失败，请稍后重试');
-      }
-    }
-  }
+  // 过滤搜索结果
+  const filteredClothes = clothes.filter(clothing => {
+    const search = searchTerm.toLowerCase()
+    return (
+      clothing.code.toLowerCase().includes(search) ||
+      clothing.name.toLowerCase().includes(search) ||
+      clothing.category.toLowerCase().includes(search) ||
+      clothing.size.toLowerCase().includes(search) ||
+      clothing.color.toLowerCase().includes(search)
+    )
+  })
 
-  const filteredClothes = clothes.filter(clothing =>
-    clothing.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    clothing.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (clothing.category && clothing.category.toLowerCase().includes(searchTerm.toLowerCase()))
-  )
-
-  const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
-  const colors = ['黑色', '白色', '红色', '蓝色', '绿色', '黄色', '紫色', '灰色', '棕色', '粉色', '橙色', '青色']
-  const categories = ['连衣裙', '上衣', 'T恤', '衬衫', '卫衣', '毛衣', '外套', '牛仔裤', '休闲裤', '短裙', '长裙', '半身裙', '短裤', '阔腿裤', '西装裤', '运动裤', '针织衫', '背心', '吊带裙', '背带裤']
+  // 常用尺寸选项
+  const sizes = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL']
+  
+  // 常用颜色选项
+  const colors = ['红色', '蓝色', '绿色', '黑色', '白色', '黄色', '紫色', '橙色', '粉色', '灰色', '自定义']
+  
+  // 常用分类选项
+  const categories = ['上衣', '裤子', '裙子', '外套', '鞋子', '配件', '自定义']
 
   return (
     <div className="container">
@@ -166,325 +269,530 @@ const ClothingManagement = ({ refreshStats }) => {
           服装管理
         </h1>
         
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <div style={{ position: 'relative' }}>
-            <Search size={20} style={{
-              position: 'absolute',
-              left: '12px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: '#999'
-            }} />
-            <input
-              type="text"
-              placeholder="搜索服装名称、编码或品类..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="form-input"
-              style={{ paddingLeft: '40px', minHeight: '44px' }}
-            />
-          </div>
-          
-          <button 
-            onClick={() => setShowForm(true)}
-            className="btn btn-primary"
-            style={{ minHeight: '44px' }}
-          >
-            <Plus size={16} />
-            新增服装
-          </button>
+        <div style={{ position: 'relative' }}>
+          <Search size={18} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#666', cursor: 'pointer' }} 
+            onClick={() => document.getElementById('clothing-search').focus()} // 添加聚焦功能
+          />
+          <input
+            id="clothing-search"
+            type="text"
+            placeholder="搜索商品..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              padding: '8px 12px 8px 32px',
+              borderRadius: '6px',
+              border: '1px solid #ddd',
+              fontSize: '14px',
+              minWidth: isMobile ? '100px' : '200px',
+              outline: 'none',
+              transition: 'border-color 0.3s'
+            }}
+            onFocus={(e) => e.target.style.borderColor = '#2196F3'}
+            onBlur={(e) => e.target.style.borderColor = '#ddd'}
+          />
         </div>
+
       </div>
 
-      {/* 新增/编辑表单 */}
-      {showForm && (
+      {/* 编辑表单 */}
+      {(showAddForm || editingClothing) && (
         <div className="card" style={{ marginBottom: '24px' }}>
           <h2 style={{ 
             fontSize: '18px', 
             fontWeight: '600', 
-            marginBottom: '24px'
+            marginBottom: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
           }}>
-            {editingClothing ? '编辑服装信息' : '新增服装'}
+            {editingClothing ? (
+              <>
+                <Edit size={20} />
+                编辑商品
+              </>
+            ) : (
+              <>
+                <Plus size={20} />
+                添加商品
+              </>
+            )}
           </h2>
           
           <form onSubmit={handleSubmit}>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))', 
               gap: '16px',
-              marginBottom: '24px'
+              marginBottom: '20px'
             }}>
-              <div className="form-group">
-                <label className="form-label">服装编码 *</label>
+              {/* 商品编码 */}
+              <div>
+                <label htmlFor="code" className="block text-sm font-medium text-gray-700 mb-1">
+                  商品编码 *
+                </label>
                 <input
                   type="text"
-                  required
+                  id="code"
+                  name="code"
                   value={formData.code}
-                  onChange={(e) => setFormData({...formData, code: e.target.value})}
-                  className="form-input"
-                  placeholder="如：F001"
+                  onChange={handleFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               
-              <div className="form-group">
-                <label className="form-label">服装名称 *</label>
+              {/* 商品名称 */}
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                  商品名称 *
+                </label>
                 <input
                   type="text"
-                  required
+                  id="name"
+                  name="name"
                   value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className="form-input"
-                  placeholder="如：男士T恤"
+                  onChange={handleFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               
-              <div className="form-group">
-                <label className="form-label">品类 *</label>
+              {/* 商品分类 */}
+              <div>
+                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                  商品分类 *
+                </label>
                 <select
-                  required
+                  id="category"
+                  name="category"
                   value={formData.category}
-                  onChange={(e) => setFormData({...formData, category: e.target.value})}
-                  className="form-input"
+                  onChange={handleFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">选择品类</option>
-                  {categories.map(category => (
-                    <option key={category} value={category}>{category}</option>
+                  <option value="">请选择分类</option>
+                  {categories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
                   ))}
-                  <option value="其他">其他</option>
                 </select>
-                {formData.category === '其他' && (
+                
+                {/* 自定义分类输入 */}
+                {formData.category === '自定义' && (
                   <input
                     type="text"
-                    className="form-input"
-                    style={{ marginTop: '8px' }}
-                    value={formData.categoryCustom}
-                    onChange={(e) => setFormData({...formData, categoryCustom: e.target.value})}
-                    placeholder="手动输入品类名称"
-                    required={formData.category === '其他'}
+                    value={categoryCustom}
+                    onChange={(e) => setCategoryCustom(e.target.value)}
+                    placeholder="输入自定义分类"
+                    style={{
+                      marginTop: '8px',
+                      padding: '6px 10px',
+                      borderRadius: '4px',
+                      border: '1px solid #ddd',
+                      width: '100%'
+                    }}
+                    onBlur={() => {
+                      if (categoryCustom) {
+                        setFormData(prev => ({
+                          ...prev,
+                          category: categoryCustom
+                        }))
+                      }
+                    }}
                   />
                 )}
               </div>
               
-              <div className="form-group">
-                <label className="form-label">尺码 *</label>
+              {/* 商品尺寸 */}
+              <div>
+                <label htmlFor="size" className="block text-sm font-medium text-gray-700 mb-1">
+                  商品尺寸 *
+                </label>
                 <select
-                  required
+                  id="size"
+                  name="size"
                   value={formData.size}
-                  onChange={(e) => setFormData({...formData, size: e.target.value})}
-                  className="form-input"
+                  onChange={handleFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">选择尺码</option>
-                  {sizes.map(size => (
-                    <option key={size} value={size}>{size}</option>
+                  <option value="">请选择尺寸</option>
+                  {sizes.map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
                   ))}
                 </select>
               </div>
               
-              <div className="form-group">
-                <label className="form-label">颜色 *</label>
+              {/* 商品颜色 */}
+              <div>
+                <label htmlFor="color" className="block text-sm font-medium text-gray-700 mb-1">
+                  商品颜色 *
+                </label>
                 <select
+                  id="color"
+                  name="color"
                   value={formData.color}
-                  onChange={(e) => setFormData({...formData, color: e.target.value})}
-                  className="form-input"
+                  onChange={handleFormChange}
                   required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">选择颜色</option>
-                  {colors.map(color => (
-                    <option key={color} value={color}>{color}</option>
+                  <option value="">请选择颜色</option>
+                  {colors.map((color) => (
+                    <option key={color} value={color}>
+                      {color}
+                    </option>
                   ))}
-                  <option value="其他">其他</option>
                 </select>
-                {(formData.color === '其他' || formData.customColor) && (
+                
+                {/* 自定义颜色输入 */}
+                {formData.color === '自定义' && (
                   <input
                     type="text"
-                    className="form-input"
-                    style={{ marginTop: '8px' }}
-                    value={formData.customColor}
-                    onChange={(e) => setFormData({...formData, customColor: e.target.value})}
-                    placeholder="手动输入颜色名称"
+                    value={customColor}
+                    onChange={(e) => setCustomColor(e.target.value)}
+                    placeholder="输入自定义颜色"
+                    style={{
+                      marginTop: '8px',
+                      padding: '6px 10px',
+                      borderRadius: '4px',
+                      border: '1px solid #ddd',
+                      width: '100%'
+                    }}
+                    onBlur={() => {
+                      if (customColor) {
+                        setFormData(prev => ({
+                          ...prev,
+                          color: customColor
+                        }))
+                      }
+                    }}
                   />
                 )}
               </div>
               
-              <div className="form-group">
-                <label className="form-label">进货价格 *</label>
+              {/* 采购价格 */}
+              <div>
+                <label htmlFor="purchasePrice" className="block text-sm font-medium text-gray-700 mb-1">
+                  采购价格
+                </label>
                 <input
                   type="number"
-                  step="0.01"
-                  required
+                  id="purchasePrice"
+                  name="purchasePrice"
                   value={formData.purchasePrice}
-                  onChange={(e) => setFormData({...formData, purchasePrice: e.target.value})}
-                  className="form-input"
-                  placeholder="0.00"
+                  onChange={handleFormChange}
+                  min="0"
+                  step="0.01"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               
-              <div className="form-group">
-                <label className="form-label">销售价格 *</label>
+              {/* 销售价格 */}
+              <div>
+                <label htmlFor="sellingPrice" className="block text-sm font-medium text-gray-700 mb-1">
+                  销售价格
+                </label>
                 <input
                   type="number"
-                  step="0.01"
-                  required
+                  id="sellingPrice"
+                  name="sellingPrice"
                   value={formData.sellingPrice}
-                  onChange={(e) => setFormData({...formData, sellingPrice: e.target.value})}
-                  className="form-input"
-                  placeholder="0.00"
+                  onChange={handleFormChange}
+                  min="0"
+                  step="0.01"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              {/* 库存数量 */}
+              <div>
+                <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-1">
+                  库存数量
+                </label>
+                <input
+                  type="number"
+                  id="quantity"
+                  name="quantity"
+                  value={formData.quantity}
+                  onChange={handleFormChange}
+                  min="0"
+                  step="1"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
             
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-              <button 
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'flex-end', 
+              gap: '12px',
+              marginTop: '24px'
+            }}>
+              <button
                 type="button"
-                onClick={resetForm}
-                className="btn btn-secondary"
-                style={{ minHeight: '44px' }}
+                onClick={handleCancel}
+                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
               >
                 取消
               </button>
-              <button 
+              <button
                 type="submit"
-                className="btn btn-primary"
-                style={{ minHeight: '44px' }}
+                disabled={isLoading}
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
-                {editingClothing ? '更新' : '保存'}
+                {isLoading ? '保存中...' : '保存'}
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* 服装列表 */}
-      <div className="card">
-        <h2 style={{ 
-          fontSize: '18px', 
-          fontWeight: '600', 
-          marginBottom: '24px'
-        }}>
-          服装列表 ({filteredClothes.length} 件)
-        </h2>
-        
-        {filteredClothes.length === 0 ? (
-          <div style={{ 
-            textAlign: 'center', 
-            padding: '40px', 
-            color: '#666' 
-          }}>
-            <Shirt size={48} color="#ccc" style={{ marginBottom: '16px' }} />
-            <p>暂无服装数据</p>
-            <p style={{ fontSize: '14px', marginTop: '8px' }}>
-              点击"新增服装"按钮开始添加
-            </p>
-          </div>
-        ) : isMobile ? (
-          // 手机端卡片布局
-          <div className="mobile-table-row">
-            {filteredClothes.map(clothing => (
-              <div key={clothing.id} className="mobile-table-card">
-                <div className="mobile-table-cell">
-                  <span className="mobile-table-label">编码</span>
-                  <span className="mobile-table-value" style={{ fontWeight: '600' }}>{clothing.code}</span>
-                </div>
-                <div className="mobile-table-cell">
-                  <span className="mobile-table-label">名称</span>
-                  <span className="mobile-table-value">{clothing.name}</span>
-                </div>
-                <div className="mobile-table-cell">
-                  <span className="mobile-table-label">品类</span>
-                  <span className="mobile-table-value">{clothing.category || '-'}</span>
-                </div>
-                <div className="mobile-table-cell">
-                  <span className="mobile-table-label">尺码</span>
-                  <span className="mobile-table-value">{clothing.size}</span>
-                </div>
-                <div className="mobile-table-cell">
-                  <span className="mobile-table-label">颜色</span>
-                  <span className="mobile-table-value">{clothing.color}</span>
-                </div>
-                <div className="mobile-table-cell">
-                  <span className="mobile-table-label">进货价</span>
-                  <span className="mobile-table-value">¥{clothing.purchasePrice.toFixed(2)}</span>
-                </div>
-                <div className="mobile-table-cell">
-                  <span className="mobile-table-label">销售价</span>
-                  <span className="mobile-table-value" style={{ color: '#4CAF50', fontWeight: '600' }}>
-                    ¥{clothing.sellingPrice.toFixed(2)}
-                  </span>
-                </div>
-                <div className="mobile-actions">
-                  <button
-                    onClick={() => editClothing(clothing)}
-                    className="btn btn-secondary"
-                    style={{ padding: '12px', minHeight: 'auto', fontSize: '14px' }}
+      {/* 数据表格 */}
+      <div className="card" style={{ overflowX: 'auto' }}>
+        {isMobile ? (
+          /* 移动设备卡片视图 */
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {filteredClothes.map((clothing) => {
+              // 获取第一个库存记录（假设一个商品只有一个库存记录）
+              const inventory = clothing.inventory && clothing.inventory.length > 0 ? clothing.inventory[0] : { quantity: 0 }
+              const isExpanded = expandedCards[clothing.id] || false
+              
+              return (
+                <div 
+                  key={clothing.id} 
+                  className="border border-gray-200 rounded-lg overflow-hidden"
+                  style={{ backgroundColor: '#fff' }}
+                >
+                  {/* 卡片头部 */}
+                  <div 
+                    style={{ 
+                      padding: '12px 16px', 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      cursor: 'pointer',
+                      backgroundColor: '#f9fafb',
+                      borderBottom: '1px solid #e5e7eb'
+                    }}
+                    onClick={() => toggleCard(clothing.id)}
                   >
-                    <Edit size={16} />
-                    编辑
-                  </button>
-                  <button
-                    onClick={() => deleteClothing(clothing.id)}
-                    className="btn btn-danger"
-                    style={{ padding: '12px', minHeight: 'auto', fontSize: '14px' }}
-                  >
-                    <Trash2 size={16} />
-                    删除
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          // 桌面端表格布局
-          <div style={{ overflowX: 'auto' }}>
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>编码</th>
-                  <th>名称</th>
-                  <th>品类</th>
-                  <th>尺码</th>
-                  <th>颜色</th>
-                  <th>进货价</th>
-                  <th>销售价</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredClothes.map(clothing => (
-                  <tr key={clothing.id}>
-                    <td style={{ fontWeight: '600' }}>{clothing.code}</td>
-                    <td>{clothing.name}</td>
-                    <td>{clothing.category || '-'}</td>
-                    <td>{clothing.size}</td>
-                    <td>{clothing.color}</td>
-                    <td>¥{clothing.purchasePrice.toFixed(2)}</td>
-                    <td style={{ color: '#4CAF50', fontWeight: '600' }}>
-                      ¥{clothing.sellingPrice.toFixed(2)}
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '8px' }}>
+                    <div>
+                      <h3 style={{ fontWeight: '600', marginBottom: '4px' }}>{clothing.name}</h3>
+                      <p style={{ fontSize: '12px', color: '#6b7280' }}>{clothing.code}</p>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ 
+                        fontSize: '12px', 
+                        backgroundColor: inventory.quantity <= 0 ? '#ef4444' : '#10b981', 
+                        color: '#fff', 
+                        padding: '2px 6px', 
+                        borderRadius: '10px'
+                      }}>
+                        {inventory.quantity}
+                      </span>
+                      {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                    </div>
+                  </div>
+                  
+                  {/* 卡片内容 */}
+                  {isExpanded && (
+                    <div style={{ padding: '16px' }}>
+                      <div style={{ marginBottom: '16px' }}>
+                        <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>
+                          <strong>分类:</strong> {clothing.category}
+                        </p>
+                        <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>
+                          <strong>尺寸:</strong> {clothing.size}
+                        </p>
+                        <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>
+                          <strong>颜色:</strong> {clothing.color}
+                        </p>
+                        {clothing.purchasePrice > 0 && (
+                          <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>
+                            <strong>采购价:</strong> ¥{clothing.purchasePrice.toFixed(2)}
+                          </p>
+                        )}
+                        {clothing.sellingPrice > 0 && (
+                          <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>
+                            <strong>销售价:</strong> ¥{clothing.sellingPrice.toFixed(2)}
+                          </p>
+                        )}
+                        <p style={{ fontSize: '14px', color: '#6b7280' }}>
+                          <strong>库存:</strong> {inventory.quantity}
+                        </p>
+                      </div>
+                      
+                      {/* 操作按钮 */}
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'flex-end', 
+                        gap: '8px',
+                        paddingTop: '12px',
+                        borderTop: '1px solid #e5e7eb'
+                      }}>
                         <button
-                          onClick={() => editClothing(clothing)}
-                          className="btn btn-secondary"
-                          style={{ padding: '8px', minHeight: 'auto' }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleEdit(clothing)
+                          }}
+                          className="px-3 py-1 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                         >
-                          <Edit size={14} />
+                          <Edit size={14} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '4px' }} />
+                          编辑
                         </button>
                         <button
-                          onClick={() => deleteClothing(clothing.id)}
-                          className="btn btn-danger"
-                          style={{ padding: '8px', minHeight: 'auto' }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDelete(clothing.id)
+                          }}
+                          className="px-3 py-1 text-xs font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                        >
+                          <Trash2 size={14} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '4px' }} />
+                          删除
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          /* 桌面设备表格视图 */
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  商品编码
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  商品名称
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  分类
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  尺寸
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  颜色
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  采购价
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  销售价
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  库存
+                </th>
+                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  操作
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredClothes.map((clothing) => {
+                // 获取第一个库存记录（假设一个商品只有一个库存记录）
+                const inventory = clothing.inventory && clothing.inventory.length > 0 ? clothing.inventory[0] : { quantity: 0 }
+                
+                return (
+                  <tr key={clothing.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {clothing.code}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {clothing.name}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {clothing.category}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {clothing.size}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {clothing.color}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      ¥{clothing.purchasePrice ? clothing.purchasePrice.toFixed(2) : '0.00'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      ¥{clothing.sellingPrice ? clothing.sellingPrice.toFixed(2) : '0.00'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span style={{ 
+                        padding: '2px 6px', 
+                        borderRadius: '10px', 
+                        fontSize: '12px',
+                        backgroundColor: inventory.quantity <= 0 ? '#ef4444' : '#10b981',
+                        color: '#fff'
+                      }}>
+                        {inventory.quantity}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                        <button
+                          onClick={() => handleEdit(clothing)}
+                          className="text-blue-600 hover:text-blue-900 focus:outline-none"
+                          style={{ 
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            transition: 'background-color 0.2s'
+                          }}
+                          onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(37, 99, 235, 0.1)'}
+                          onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
+                        >
+                          <Edit size={14} />
+                          {isTablet ? '编辑' : ''}
+                        </button>
+                        <button
+                          onClick={() => handleDelete(clothing.id)}
+                          className="text-red-600 hover:text-red-900 focus:outline-none"
+                          style={{ 
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            transition: 'background-color 0.2s'
+                          }}
+                          onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'}
+                          onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
                         >
                           <Trash2 size={14} />
+                          {isTablet ? '删除' : ''}
                         </button>
                       </div>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                )
+              })}
+            </tbody>
+          </table>
         )}
       </div>
+
+      {/* 显示添加按钮（仅当表单未显示时） */}
+      {!showAddForm && !editingClothing && (
+        <button
+          onClick={() => setShowAddForm(true)}
+          className="fixed bottom-6 right-6 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          style={{ 
+            zIndex: 100, 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+          }}
+        >
+          <Plus size={24} />
+        </button>
+      )}
+
+      {/* 提示信息 */}
+      <Alert message={alertMessage} type={alertType} onClose={() => setAlertMessage('')} />
     </div>
   )
 }

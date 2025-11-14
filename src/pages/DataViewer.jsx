@@ -1,12 +1,75 @@
 import React, { useState, useEffect } from 'react'
 import { Database, Search, RefreshCw, Download } from 'lucide-react'
 import { db } from '../db/database'
+import { useMediaQuery } from '../hooks/useMediaQuery'
+
+// 查看更多按钮组件
+const ViewMoreButton = ({ record, table }) => {
+  const [expanded, setExpanded] = useState(false)
+  
+  const getAllFields = () => {
+    return Object.keys(record)
+  }
+  
+  const importantFields = getImportantFields(table)
+  const allFields = getAllFields()
+  const additionalFields = allFields.filter(field => !importantFields.includes(field))
+  
+  if (additionalFields.length === 0) return null
+  
+  return (
+    <div>
+      <button 
+        onClick={() => setExpanded(!expanded)}
+        style={{
+          marginTop: '8px',
+          padding: '4px 8px',
+          backgroundColor: '#f0f0f0',
+          border: 'none',
+          borderRadius: '4px',
+          fontSize: '11px',
+          cursor: 'pointer',
+          color: '#666'
+        }}
+      >
+        {expanded ? '收起详情' : '查看更多'}
+      </button>
+      
+      {expanded && (
+        <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #f0f0f0' }}>
+          {additionalFields.map((field) => (
+            <div key={field} style={{ marginBottom: '4px', display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontWeight: '600', color: '#888', fontSize: '10px', marginBottom: '1px' }}>
+                {formatHeader(field)}
+              </span>
+              <span style={{ wordBreak: 'break-word', fontSize: '11px', color: '#666' }}>
+                {formatValue(record[field], field)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// 获取各表重要字段
+const getImportantFields = (tableName) => {
+  const fieldMaps = {
+    stockIn: ['id', 'clothingInfo', 'quantity', 'purchasePrice', 'totalAmount', 'date', 'operator'],
+    stockOut: ['id', 'clothingInfo', 'quantity', 'sellingPrice', 'totalAmount', 'date', 'operator'],
+    clothes: ['id', 'code', 'name', 'category', 'size', 'color'],
+    inventory: ['id', 'clothingInfo', 'size', 'color', 'quantity']
+  }
+  return fieldMaps[tableName] || Object.keys(fieldMaps.stockIn)
+}
 
 const DataViewer = () => {
   const [selectedTable, setSelectedTable] = useState('stockIn')
   const [records, setRecords] = useState([])
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const isMobile = useMediaQuery('(max-width: 768px)')
 
   useEffect(() => {
     loadRecords()
@@ -100,26 +163,27 @@ const DataViewer = () => {
   }
 
   return (
-    <div className="container">
+    <div className="container" style={{ padding: '10px' }}>
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: '24px',
+        justifyContent: isMobile ? 'center' : 'space-between',
+        marginBottom: '16px',
         flexWrap: 'wrap',
-        gap: '16px'
+        gap: '10px',
+        textAlign: 'center'
       }}>
         <h1 className="text-xl font-semibold" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Database size={24} />
           数据查看器
         </h1>
         
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
           <select 
             value={selectedTable}
             onChange={(e) => setSelectedTable(e.target.value)}
             className="form-input"
-            style={{ minWidth: '120px' }}
+            style={{ minWidth: '120px', width: isMobile ? '100%' : 'auto' }}
           >
             <option value="stockIn">入库记录</option>
             <option value="stockOut">出库记录</option>
@@ -131,8 +195,15 @@ const DataViewer = () => {
             onClick={loadRecords}
             disabled={loading}
             className="btn"
-            style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
-          >
+            style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                gap: '4px',
+                padding: '6px 10px',
+                fontSize: isMobile ? '12px' : '14px'
+              }}
+            >
             <RefreshCw size={16} />
             刷新
           </button>
@@ -151,26 +222,30 @@ const DataViewer = () => {
 
       <div className="card" style={{ marginBottom: '24px' }}>
         <div style={{ marginBottom: '16px' }}>
-          <div className="form-group" style={{ margin: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Search size={16} />
+          <div className="form-group" style={{ margin: 0, width: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+              <Search size={16} style={{ cursor: 'pointer' }} 
+                onClick={() => document.getElementById('data-viewer-search').focus()} // 添加聚焦功能
+              />
               <input
+                id="data-viewer-search"
                 type="text"
-                placeholder={`搜索${getTableTitle(selectedTable)}记录...`}
+                placeholder={`搜索记录...`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="form-input"
-                style={{ flex: 1, minWidth: 200 }}
+                style={{ flex: 1, minWidth: isMobile ? '100px' : '200px', fontSize: isMobile ? '14px' : '16px' }}
               />
             </div>
           </div>
         </div>
 
         <div style={{ 
-          maxHeight: '60vh', 
+          maxHeight: '70vh', 
           overflowY: 'auto',
           border: '1px solid #e0e0e0',
-          borderRadius: '4px'
+          borderRadius: '4px',
+          fontSize: isMobile ? '12px' : '14px'
         }}>
           {loading ? (
             <div style={{ 
@@ -189,47 +264,82 @@ const DataViewer = () => {
               暂无记录
             </div>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ 
-                  backgroundColor: '#f5f5f5', 
-                  position: 'sticky',
-                  top: 0
-                }}>
-                  {getTableHeaders().map((header, index) => (
-                    <th key={index} style={{
-                      padding: '12px',
-                      textAlign: 'left',
-                      borderBottom: '1px solid #e0e0e0',
-                      fontSize: '14px',
-                      fontWeight: '600'
-                    }}>
-                      {formatHeader(header)}
-                    </th>
+            isMobile ? (
+                // 移动设备：卡片式布局
+                <div style={{ padding: '8px' }}>
+                  {filteredRecords.map((record, recordIndex) => (
+                    <div 
+                      key={recordIndex} 
+                      style={{ 
+                        border: '1px solid #e0e0e0',
+                        borderRadius: '8px',
+                        padding: '12px',
+                        marginBottom: '12px',
+                        backgroundColor: '#fff',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                      }}
+                    >
+                      {/* 简化显示，只显示最重要的字段 */}
+                      {getImportantFields(selectedTable).map((field) => (
+                        <div key={field} style={{ marginBottom: '6px', display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontWeight: '600', color: '#666', fontSize: '11px', marginBottom: '2px' }}>
+                            {formatHeader(field)}
+                          </span>
+                          <span style={{ wordBreak: 'break-word', fontSize: '12px' }}>
+                            {formatValue(record[field], field)}
+                          </span>
+                        </div>
+                      ))}
+                      
+                      {/* 添加查看更多按钮 */}
+                      <ViewMoreButton record={record} table={selectedTable} />
+                    </div>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filteredRecords.map((record, recordIndex) => (
-                  <tr key={recordIndex} style={{
-                    borderBottom: '1px solid #f0f0f0',
-                    backgroundColor: recordIndex % 2 === 0 ? '#fff' : '#fafafa'
-                  }}>
-                    {getTableHeaders().map((header, index) => (
-                    <td key={index} style={{
-                      padding: '12px',
-                      fontSize: '14px',
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-word'
+                </div>
+              ) : (
+                // 桌面设备：表格布局
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ 
+                      backgroundColor: '#f5f5f5', 
+                      position: 'sticky',
+                      top: 0
                     }}>
-                      {formatValue(record[header], header)}
-                    </td>
-                  ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+                      {getTableHeaders().map((header, index) => (
+                        <th key={index} style={{
+                          padding: '12px',
+                          textAlign: 'left',
+                          borderBottom: '1px solid #e0e0e0',
+                          fontSize: '14px',
+                          fontWeight: '600'
+                        }}>
+                          {formatHeader(header)}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredRecords.map((record, recordIndex) => (
+                      <tr key={recordIndex} style={{
+                        borderBottom: '1px solid #f0f0f0',
+                        backgroundColor: recordIndex % 2 === 0 ? '#fff' : '#fafafa'
+                      }}>
+                        {getTableHeaders().map((header, index) => (
+                        <td key={index} style={{
+                          padding: '12px',
+                          fontSize: '14px',
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word'
+                        }}>
+                          {formatValue(record[header], header)}
+                        </td>
+                      ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )
+            )}
         </div>
 
         <div style={{ 

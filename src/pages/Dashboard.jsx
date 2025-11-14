@@ -37,11 +37,32 @@ const Dashboard = () => {
       color: '#FF9800'
     },
     {
-      title: '添加服装',
-      description: '新增服装品类',
+      title: '商品管理',
+      description: '管理商品信息',
       icon: Shirt,
       path: '/clothing',
       color: '#9C27B0'
+    },
+    {
+      title: '统计报表',
+      description: '查看库存统计报表',
+      icon: BarChart3,
+      path: '/reports',
+      color: '#F44336'
+    },
+    {
+      title: '数据查看器',
+      description: '查看和导出数据',
+      icon: Database,
+      path: '/data-viewer',
+      color: '#00BCD4'
+    },
+    {
+      title: '系统设置',
+      description: '配置系统参数',
+      icon: Settings,
+      path: '/settings',
+      color: '#FFC107'
     }
   ]
 
@@ -53,7 +74,7 @@ const Dashboard = () => {
         justifyContent: 'space-between',
         marginBottom: '32px'
       }}>
-        <h1 className="text-xl font-semibold">仪表板</h1>
+        <h1 className="text-xl font-semibold">快速操作</h1>
         <button 
           onClick={refreshStats}
           className="btn btn-secondary"
@@ -91,8 +112,8 @@ const Dashboard = () => {
         </h2>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-          gap: '16px'
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: '12px'
         }}>
           {quickActions.map((action, index) => {
             const IconComponent = action.icon
@@ -103,15 +124,15 @@ const Dashboard = () => {
                 style={{
                   background: 'white',
                   border: `2px solid ${action.color}20`,
-                  borderRadius: '12px',
-                  padding: '20px',
+                  borderRadius: '10px',
+                  padding: '16px',
                   textAlign: 'left',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
-                  minHeight: '120px',
+                  minHeight: '90px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '12px'
+                  gap: '8px'
                 }}
                 onMouseEnter={(e) => {
                   e.target.style.transform = 'translateY(-2px)'
@@ -138,7 +159,7 @@ const Dashboard = () => {
                     <IconComponent size={20} color={action.color} />
                   </div>
                   <span style={{
-                    fontSize: '18px',
+                    fontSize: '16px',
                     fontWeight: '600',
                     color: action.color
                   }}>
@@ -147,8 +168,8 @@ const Dashboard = () => {
                 </div>
                 <p style={{
                   color: '#666',
-                  fontSize: '14px',
-                  lineHeight: '1.4',
+                  fontSize: '13px',
+                  lineHeight: '1.3',
                   margin: 0
                 }}>
                   {action.description}
@@ -159,31 +180,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* 最近活动 */}
-      <div className="card">
-        <h2 style={{ 
-          fontSize: '20px', 
-          fontWeight: '600', 
-          marginBottom: '24px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
-          <Activity size={20} />
-          最近活动
-        </h2>
-        <div style={{
-          color: '#666',
-          textAlign: 'center',
-          padding: '40px 20px'
-        }}>
-          <Calendar size={48} color="#ccc" style={{ marginBottom: '16px' }} />
-          <p>暂无最近活动记录</p>
-          <p style={{ fontSize: '14px', marginTop: '8px' }}>
-            开始使用系统后，这里将显示您的操作记录
-          </p>
-        </div>
-      </div>
+
     </div>
   )
 }
@@ -193,7 +190,8 @@ const RefreshCw = ({ size }) => <span style={{ fontSize: size }}>↻</span>
 const Warehouse = ({ size }) => <span style={{ fontSize: size }}>📦</span>
 const Shirt = ({ size }) => <span style={{ fontSize: size }}>👕</span>
 const Zap = ({ size }) => <span style={{ fontSize: size }}>⚡</span>
-const Activity = ({ size }) => <span style={{ fontSize: size }}>📊</span>
-const Calendar = ({ size }) => <span style={{ fontSize: size }}>📅</span>
+const BarChart3 = ({ size }) => <span style={{ fontSize: size }}>📈</span>
+const Database = ({ size }) => <span style={{ fontSize: size }}>🗄️</span>
+const Settings = ({ size }) => <span style={{ fontSize: size }}>⚙️</span>
 
 export default Dashboard
