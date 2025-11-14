@@ -595,15 +595,16 @@ const DataViewer = () => {
               <button
                 onClick={handleCloseConfirmDialog}
                 style={{
-                  padding: '10px 20px',
+                  padding: isMobile ? '14px 24px' : '10px 20px',
                   borderRadius: '8px',
                   border: '1px solid #ddd',
                   backgroundColor: 'white',
-                  color: '#333',
-                  fontSize: isMobile ? '14px' : '16px',
-                  fontWeight: '500',
+                  color: '#2196F3',
+                  fontSize: isMobile ? '18px' : '16px',
+                  fontWeight: 'bold',
                   cursor: 'pointer',
-                  flex: 1
+                  flex: 1,
+                  minHeight: '50px'
                 }}
               >
                 取消
@@ -612,19 +613,20 @@ const DataViewer = () => {
                 onClick={handleDeleteSelected}
                 disabled={isDeleting}
                 style={{
-                  padding: '10px 20px',
+                  padding: isMobile ? '14px 24px' : '10px 20px',
                   borderRadius: '8px',
                   border: 'none',
-                  backgroundColor: '#f44336',
+                  backgroundColor: '#4CAF50',
                   color: 'white',
-                  fontSize: isMobile ? '14px' : '16px',
+                  fontSize: isMobile ? '18px' : '16px',
                   fontWeight: 'bold',
                   cursor: isDeleting ? 'not-allowed' : 'pointer',
                   opacity: isDeleting ? 0.7 : 1,
-                  flex: 1
+                  flex: 1,
+                  minHeight: '50px'
                 }}
               >
-                {isDeleting ? '删除中...' : '确认删除'}
+                {isDeleting ? '删除中...' : '确定'}
               </button>
             </div>
           </div>

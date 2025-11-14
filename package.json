@@ -4,7 +4,7 @@
   "description": "服装店出入库管理系统 - 平板优化版本",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 3000",
     "build": "vite build",
     "preview": "vite preview"
   },
