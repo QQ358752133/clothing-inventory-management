@@ -89,15 +89,15 @@ const ClothingManagement = ({ refreshStats }) => {
       }
 
       if (editingClothing) {
-        // 更新现有商品，确保价格精度
+        // 更新现有商品
         await db.clothes.update(editingClothing.id, {
           code: formData.code,
           name: formData.name,
           category: formData.category,
           size: formData.size,
           color: formData.color,
-          purchasePrice: parseFloat(parseFloat(formData.purchasePrice).toFixed(2)) || 0,
-          sellingPrice: parseFloat(parseFloat(formData.sellingPrice).toFixed(2)) || 0,
+          purchasePrice: Math.round(parseFloat(formData.purchasePrice) * 100) / 100 || 0,
+          sellingPrice: Math.round(parseFloat(formData.sellingPrice) * 100) / 100 || 0,
           updatedAt: new Date().toISOString()
         })
         setAlertMessage('商品信息已更新')
@@ -118,8 +118,8 @@ const ClothingManagement = ({ refreshStats }) => {
           category: formData.category,
           size: formData.size,
           color: formData.color,
-          purchasePrice: parseFloat(parseFloat(formData.purchasePrice).toFixed(2)) || 0,
-          sellingPrice: parseFloat(parseFloat(formData.sellingPrice).toFixed(2)) || 0,
+          purchasePrice: Math.round(parseFloat(formData.purchasePrice) * 100) / 100 || 0,
+          sellingPrice: Math.round(parseFloat(formData.sellingPrice) * 100) / 100 || 0,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         })
@@ -249,7 +249,7 @@ const ClothingManagement = ({ refreshStats }) => {
   const sizes = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL']
   
   // 常用颜色选项
-  const colors = ['红色', '蓝色', '绿色', '黑色', '白色', '黄色', '紫色', '橙色', '粉色', '灰色', '自定义']
+  const colors = ['红色', '蓝色', '绿色', '黑色', '白色', '黄色', '紫色', '橙色', '粉色', '灰色', '卡其色', '米白色', '驼色', '米色', '香槟色', '珊瑚色', '薄荷绿', '雾霾蓝', '砖红色', '浅紫色', '鹅黄色', '奶茶色', '烟灰色', '自定义']
   
   // 常用分类选项
   const categories = ['上衣', '裤子', '裙子', '外套', '鞋子', '配件', '自定义']
@@ -485,6 +485,7 @@ const ClothingManagement = ({ refreshStats }) => {
                   name="purchasePrice"
                   value={formData.purchasePrice}
                   onChange={handleFormChange}
+                  onWheel={(e) => e.target.blur()}
                   min="0"
                   step="0.01"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -502,6 +503,7 @@ const ClothingManagement = ({ refreshStats }) => {
                   name="sellingPrice"
                   value={formData.sellingPrice}
                   onChange={handleFormChange}
+                  onWheel={(e) => e.target.blur()}
                   min="0"
                   step="0.01"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -519,6 +521,7 @@ const ClothingManagement = ({ refreshStats }) => {
                   name="quantity"
                   value={formData.quantity}
                   onChange={handleFormChange}
+                  onWheel={(e) => e.target.blur()}
                   min="0"
                   step="1"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -639,9 +642,10 @@ const ClothingManagement = ({ refreshStats }) => {
                             e.stopPropagation()
                             handleEdit(clothing)
                           }}
-                          className="px-3 py-1 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          style={{ minHeight: '44px', minWidth: '80px' }}
                         >
-                          <Edit size={14} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '4px' }} />
+                          <Edit size={16} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '4px' }} />
                           编辑
                         </button>
                         <button
@@ -649,9 +653,10 @@ const ClothingManagement = ({ refreshStats }) => {
                             e.stopPropagation()
                             handleDelete(clothing.id)
                           }}
-                          className="px-3 py-1 text-xs font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                          className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                          style={{ minHeight: '44px', minWidth: '80px' }}
                         >
-                          <Trash2 size={14} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '4px' }} />
+                          <Trash2 size={16} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '4px' }} />
                           删除
                         </button>
                       </div>
@@ -740,28 +745,34 @@ const ClothingManagement = ({ refreshStats }) => {
                           onClick={() => handleEdit(clothing)}
                           className="text-blue-600 hover:text-blue-900 focus:outline-none"
                           style={{ 
-                            padding: '4px 8px',
-                            borderRadius: '4px',
-                            transition: 'background-color 0.2s'
+                            padding: '8px 12px',
+                            borderRadius: '6px',
+                            transition: 'background-color 0.2s',
+                            minHeight: '40px',
+                            minWidth: '70px',
+                            fontSize: '14px'
                           }}
                           onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(37, 99, 235, 0.1)'}
                           onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
                         >
-                          <Edit size={14} />
+                          <Edit size={16} />
                           {isTablet ? '编辑' : ''}
                         </button>
                         <button
                           onClick={() => handleDelete(clothing.id)}
                           className="text-red-600 hover:text-red-900 focus:outline-none"
                           style={{ 
-                            padding: '4px 8px',
-                            borderRadius: '4px',
-                            transition: 'background-color 0.2s'
+                            padding: '8px 12px',
+                            borderRadius: '6px',
+                            transition: 'background-color 0.2s',
+                            minHeight: '40px',
+                            minWidth: '70px',
+                            fontSize: '14px'
                           }}
                           onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'}
                           onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={16} />
                           {isTablet ? '删除' : ''}
                         </button>
                       </div>

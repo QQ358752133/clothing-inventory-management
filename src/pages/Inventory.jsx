@@ -36,12 +36,20 @@ const Inventory = ({ refreshStats }) => {
       // 合并库存和服装信息
       const inventoryWithDetails = allInventory.map(inv => {
         const clothing = allClothes.find(c => c.id === inv.clothingId)
+        const totalValue = clothing ? inv.quantity * clothing.purchasePrice : 0
         return {
           ...inv,
           clothing: clothing || {},
-          totalValue: clothing ? inv.quantity * clothing.purchasePrice : 0
+          totalValue: Math.round(totalValue * 100) / 100 // 确保总价值精度
         }
       }).filter(item => item.clothing.id) // 过滤掉没有对应服装的库存记录
+      .sort((a, b) => {
+        // 按服装编码排序
+        if (a.clothing.code && b.clothing.code) {
+          return a.clothing.code.localeCompare(b.clothing.code)
+        }
+        return 0
+      })
       
       setInventory(inventoryWithDetails)
     } catch (error) {
@@ -51,7 +59,7 @@ const Inventory = ({ refreshStats }) => {
 
   const filteredInventory = inventory
 
-  const lowStockItems = filteredInventory.filter(item => item.quantity <= lowStockThreshold)
+  const lowStockItems = filteredInventory.filter(item => item.quantity > 0 && item.quantity <= lowStockThreshold)
   const outOfStockItems = filteredInventory.filter(item => item.quantity === 0)
 
   const getStockStatus = (quantity) => {
@@ -113,23 +121,22 @@ const Inventory = ({ refreshStats }) => {
               width: '100%',
               position: 'relative'
             }}>
-              <table className="table" style={{ minWidth: '800px', width: '100%' }}>
+              <table className="table" style={{ minWidth: '800px', width: '100%', tableLayout: 'fixed', borderSpacing: 0, borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ background: '#f8f9fa' }}>
-                    <th style={{ padding: '16px 12px', fontWeight: '600', color: '#555', textAlign: 'left', borderBottom: '2px solid #e0e0e0' }}>服装编码</th>
-                    <th style={{ padding: '16px 12px', fontWeight: '600', color: '#555', textAlign: 'left', borderBottom: '2px solid #e0e0e0' }}>服装名称</th>
-                    <th style={{ padding: '16px 12px', fontWeight: '600', color: '#555', textAlign: 'left', borderBottom: '2px solid #e0e0e0' }}>品类</th>
-                    <th style={{ padding: '16px 12px', fontWeight: '600', color: '#555', textAlign: 'left', borderBottom: '2px solid #e0e0e0' }}>尺码</th>
-                    <th style={{ padding: '16px 12px', fontWeight: '600', color: '#555', textAlign: 'left', borderBottom: '2px solid #e0e0e0' }}>颜色</th>
-                    <th style={{ padding: '16px 12px', fontWeight: '600', color: '#555', textAlign: 'right', borderBottom: '2px solid #e0e0e0' }}>库存数量</th>
-                    <th style={{ padding: '16px 12px', fontWeight: '600', color: '#555', textAlign: 'left', borderBottom: '2px solid #e0e0e0' }}>库存状态</th>
-                    <th style={{ padding: '16px 12px', fontWeight: '600', color: '#555', textAlign: 'right', borderBottom: '2px solid #e0e0e0' }}>进货价格</th>
-                    <th style={{ padding: '16px 12px', fontWeight: '600', color: '#555', textAlign: 'right', borderBottom: '2px solid #e0e0e0' }}>库存价值</th>
+                    <th style={{ padding: '4px 3px !important', fontWeight: '600', color: '#555', textAlign: 'left', borderBottom: '2px solid #e0e0e0', position: 'sticky', left: 0, background: '#f8f9fa', zIndex: 10, width: '75px !important' }}>服装编码</th>
+                    <th style={{ padding: '4px 0px !important', fontWeight: '600', color: '#555', textAlign: 'left', borderBottom: '2px solid #e0e0e0', position: 'sticky', left: 75, background: '#f8f9fa', zIndex: 10, width: '90px !important' }}>服装名称</th>
+                    <th style={{ padding: '4px 0px !important', fontWeight: '600', color: '#555', textAlign: 'right', borderBottom: '2px solid #e0e0e0', width: '65px !important' }}>进货价格</th>
+                    <th style={{ padding: '4px 3px !important', fontWeight: '600', color: '#555', textAlign: 'right', borderBottom: '2px solid #e0e0e0', width: '65px !important' }}>销售价格</th>
+                    <th style={{ padding: '4px 3px !important', fontWeight: '600', color: '#555', textAlign: 'left', borderBottom: '2px solid #e0e0e0', width: '60px !important' }}>品类</th>
+                    <th style={{ padding: '4px 3px !important', fontWeight: '600', color: '#555', textAlign: 'left', borderBottom: '2px solid #e0e0e0', width: '50px !important' }}>尺码</th>
+                    <th style={{ padding: '4px 3px !important', fontWeight: '600', color: '#555', textAlign: 'left', borderBottom: '2px solid #e0e0e0', width: '50px !important' }}>颜色</th>
+                    <th style={{ padding: '4px 3px !important', fontWeight: '600', color: '#555', textAlign: 'right', borderBottom: '2px solid #e0e0e0', width: '65px !important' }}>库存数量</th>
+                    <th style={{ padding: '4px 3px !important', fontWeight: '600', color: '#555', textAlign: 'right', borderBottom: '2px solid #e0e0e0', width: '65px !important' }}>库存价值</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredInventory.map((item, index) => {
-                    const status = getStockStatus(item.quantity)
                     return (
                       <tr key={item.id} style={{
                         transition: 'background-color 0.2s ease',
@@ -137,13 +144,15 @@ const Inventory = ({ refreshStats }) => {
                       }}
                       onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f7ff'}
                       onMouseLeave={(e) => e.currentTarget.style.backgroundColor = index % 2 === 0 ? '#ffffff' : '#fafafa'}>
-                        <td style={{ padding: '16px 12px', fontWeight: '600', color: '#333', borderBottom: '1px solid #f0f0f0' }}>{item.clothing.code}</td>
-                        <td style={{ padding: '16px 12px', color: '#333', borderBottom: '1px solid #f0f0f0' }}>{item.clothing.name}</td>
-                        <td style={{ padding: '16px 12px', color: '#666', borderBottom: '1px solid #f0f0f0' }}>{item.clothing.category}</td>
-                        <td style={{ padding: '16px 12px', color: '#666', borderBottom: '1px solid #f0f0f0' }}>{item.clothing.size}</td>
-                        <td style={{ padding: '16px 12px', color: '#666', borderBottom: '1px solid #f0f0f0' }}>{item.clothing.color}</td>
+                        <td style={{ padding: '4px 3px !important', fontWeight: '600', color: '#333', borderBottom: '1px solid #f0f0f0', position: 'sticky', left: 0, background: index % 2 === 0 ? '#ffffff' : '#fafafa', zIndex: 5, width: '75px !important' }}>{item.clothing.code}</td>
+                        <td style={{ padding: '4px 0px !important', color: '#333', borderBottom: '1px solid #f0f0f0', position: 'sticky', left: 75, background: index % 2 === 0 ? '#ffffff' : '#fafafa', zIndex: 5, width: '90px !important' }}>{item.clothing.name}</td>
+                        <td style={{ padding: '4px 0px !important', textAlign: 'right', color: '#666', borderBottom: '1px solid #f0f0f0' }}>¥{item.clothing.purchasePrice.toFixed(2)}</td>
+                        <td style={{ padding: '4px 3px !important', textAlign: 'right', color: '#666', borderBottom: '1px solid #f0f0f0' }}>¥{item.clothing.sellingPrice.toFixed(2)}</td>
+                        <td style={{ padding: '4px 3px !important', color: '#666', borderBottom: '1px solid #f0f0f0' }}>{item.clothing.category}</td>
+                        <td style={{ padding: '4px 3px !important', color: '#666', borderBottom: '1px solid #f0f0f0' }}>{item.clothing.size}</td>
+                        <td style={{ padding: '4px 3px !important', color: '#666', borderBottom: '1px solid #f0f0f0' }}>{item.clothing.color}</td>
                         <td style={{ 
-                          padding: '16px 12px',
+                          padding: '4px 3px !important',
                           fontWeight: '600',
                           textAlign: 'right',
                           color: item.quantity === 0 ? '#f44336' : item.quantity <= lowStockThreshold ? '#FF9800' : '#4CAF50',
@@ -151,21 +160,7 @@ const Inventory = ({ refreshStats }) => {
                         }}>
                           {item.quantity} 件
                         </td>
-                        <td style={{ padding: '16px 12px', borderBottom: '1px solid #f0f0f0' }}>
-                          <span style={{
-                            padding: '6px 14px',
-                            borderRadius: '16px',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            background: status.bgColor,
-                            color: status.color,
-                            display: 'inline-block'
-                          }}>
-                            {status.text}
-                          </span>
-                        </td>
-                        <td style={{ padding: '16px 12px', textAlign: 'right', color: '#666', borderBottom: '1px solid #f0f0f0' }}>¥{item.clothing.purchasePrice.toFixed(2)}</td>
-                        <td style={{ padding: '16px 12px', textAlign: 'right', fontWeight: '600', color: '#2196F3', borderBottom: '1px solid #f0f0f0' }}>
+                        <td style={{ padding: '4px 3px !important', textAlign: 'right', fontWeight: '600', color: '#2196F3', borderBottom: '1px solid #f0f0f0' }}>
                           ¥{item.totalValue.toFixed(2)}
                         </td>
                       </tr>
@@ -310,51 +305,6 @@ const Inventory = ({ refreshStats }) => {
             {showLowStockDetails ? <ChevronUp size={20} color="#FF9800" /> : <ChevronDown size={20} color="#FF9800" />}
           </div>
         </div>
-
-        <div className="card" style={{
-          cursor: 'pointer',
-          transition: 'transform 0.2s ease, box-shadow 0.2s ease'
-        }}
-        onClick={() => setShowOutOfStockDetails(!showOutOfStockDetails)}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'translateY(-4px)';
-          e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.08)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'translateY(0)';
-          e.currentTarget.style.boxShadow = 'none';
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '16px'
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '16px'
-            }}>
-              <div style={{
-                background: '#FFEBEE',
-                borderRadius: '12px',
-                padding: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <AlertTriangle size={24} color="#f44336" />
-              </div>
-              <div>
-                <div style={{ fontSize: '14px', color: '#666' }}>缺货商品</div>
-                <div style={{ fontSize: '28px', fontWeight: '600', color: '#f44336' }}>
-                  {outOfStockItems.length}
-                </div>
-              </div>
-            </div>
-            {showOutOfStockDetails ? <ChevronUp size={20} color="#f44336" /> : <ChevronDown size={20} color="#f44336" />}
-          </div>
-        </div>
       </div>
 
       {/* 低库存预警详情 */}
@@ -382,29 +332,39 @@ const Inventory = ({ refreshStats }) => {
             width: '100%',
             position: 'relative'
           }}>
-            <table className="table" style={{ minWidth: '600px', width: '100%' }}>
+            <table className="table" style={{ minWidth: '800px', width: '100%' }}>
               <thead>
                 <tr style={{ background: '#FFF3E0' }}>
-                  <th style={{ padding: '16px 12px', fontWeight: '600', color: '#E65100', textAlign: 'left', borderBottom: '2px solid #FFE0B2' }}>服装名称</th>
-                  <th style={{ padding: '16px 12px', fontWeight: '600', color: '#E65100', textAlign: 'left', borderBottom: '2px solid #FFE0B2' }}>服装编码</th>
-                  <th style={{ padding: '16px 12px', fontWeight: '600', color: '#E65100', textAlign: 'left', borderBottom: '2px solid #FFE0B2' }}>品类</th>
-                  <th style={{ padding: '16px 12px', fontWeight: '600', color: '#E65100', textAlign: 'right', borderBottom: '2px solid #FFE0B2' }}>当前库存</th>
-                  <th style={{ padding: '16px 12px', fontWeight: '600', color: '#E65100', textAlign: 'right', borderBottom: '2px solid #FFE0B2' }}>阈值</th>
+                  <th style={{ padding: '8px 12px', fontWeight: '600', color: '#E65100', textAlign: 'left', borderBottom: '2px solid #FFE0B2' }}>服装编码</th>
+                  <th style={{ padding: '8px 12px', fontWeight: '600', color: '#E65100', textAlign: 'left', borderBottom: '2px solid #FFE0B2' }}>服装名称</th>
+                  <th style={{ padding: '8px 12px', fontWeight: '600', color: '#E65100', textAlign: 'left', borderBottom: '2px solid #FFE0B2' }}>品类</th>
+                  <th style={{ padding: '8px 12px', fontWeight: '600', color: '#E65100', textAlign: 'left', borderBottom: '2px solid #FFE0B2' }}>尺码</th>
+                  <th style={{ padding: '8px 12px', fontWeight: '600', color: '#E65100', textAlign: 'left', borderBottom: '2px solid #FFE0B2' }}>颜色</th>
+                  <th style={{ padding: '8px 12px', fontWeight: '600', color: '#E65100', textAlign: 'right', borderBottom: '2px solid #FFE0B2' }}>进货价格</th>
+                  <th style={{ padding: '8px 12px', fontWeight: '600', color: '#E65100', textAlign: 'right', borderBottom: '2px solid #FFE0B2' }}>销售价格</th>
+                  <th style={{ padding: '8px 12px', fontWeight: '600', color: '#E65100', textAlign: 'right', borderBottom: '2px solid #FFE0B2' }}>当前库存</th>
+                  <th style={{ padding: '8px 12px', fontWeight: '600', color: '#E65100', textAlign: 'right', borderBottom: '2px solid #FFE0B2' }}>阈值</th>
                 </tr>
               </thead>
               <tbody>
-                {lowStockItems.map((item, index) => (
+                {lowStockItems
+                  .sort((a, b) => a.quantity - b.quantity) // 按库存数量升序排序
+                  .map((item, index) => (
                   <tr key={item.id} style={{
                     transition: 'background-color 0.2s ease',
-                    backgroundColor: index % 2 === 0 ? '#ffffff' : '#FFF8E1'
+                    backgroundColor: index % 2 === 0 ? '#ffffff' : '#FFF3E0'
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FFF3E0'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = index % 2 === 0 ? '#ffffff' : '#FFF8E1'}>
-                    <td style={{ padding: '16px 12px', fontWeight: '600', color: '#E65100', borderBottom: '1px solid #FFE0B2' }}>{item.clothing.name}</td>
-                    <td style={{ padding: '16px 12px', color: '#666', borderBottom: '1px solid #FFE0B2' }}>{item.clothing.code}</td>
-                    <td style={{ padding: '16px 12px', color: '#666', borderBottom: '1px solid #FFE0B2' }}>{item.clothing.category}</td>
-                    <td style={{ padding: '16px 12px', textAlign: 'right', fontWeight: '600', color: '#FF9800', borderBottom: '1px solid #FFE0B2' }}>{item.quantity} 件</td>
-                    <td style={{ padding: '16px 12px', textAlign: 'right', color: '#666', borderBottom: '1px solid #FFE0B2' }}>{lowStockThreshold} 件</td>
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = index % 2 === 0 ? '#ffffff' : '#FFF3E0'}>
+                    <td style={{ padding: '8px 12px', fontWeight: '600', color: '#E65100', borderBottom: '1px solid #FFE0B2' }}>{item.clothing.code}</td>
+                    <td style={{ padding: '8px 12px', fontWeight: '600', color: '#E65100', borderBottom: '1px solid #FFE0B2' }}>{item.clothing.name}</td>
+                    <td style={{ padding: '8px 12px', color: '#666', borderBottom: '1px solid #FFE0B2' }}>{item.clothing.category}</td>
+                    <td style={{ padding: '8px 12px', color: '#666', borderBottom: '1px solid #FFE0B2' }}>{item.clothing.size}</td>
+                    <td style={{ padding: '8px 12px', color: '#666', borderBottom: '1px solid #FFE0B2' }}>{item.clothing.color}</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#666', borderBottom: '1px solid #FFE0B2' }}>¥{item.clothing.purchasePrice.toFixed(2)}</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#666', borderBottom: '1px solid #FFE0B2' }}>¥{item.clothing.sellingPrice.toFixed(2)}</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: '600', color: '#FF9800', borderBottom: '1px solid #FFE0B2' }}>{item.quantity} 件</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#666', borderBottom: '1px solid #FFE0B2' }}>{lowStockThreshold} 件</td>
                   </tr>
                 ))}
               </tbody>
@@ -412,6 +372,52 @@ const Inventory = ({ refreshStats }) => {
           </div>
         </div>
       )}
+
+      {/* 缺货商品卡片 */}
+      <div className="card" style={{
+        cursor: 'pointer',
+        transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+      }}
+      onClick={() => setShowOutOfStockDetails(!showOutOfStockDetails)}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'translateY(-4px)';
+        e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.08)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = 'none';
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '16px'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px'
+          }}>
+            <div style={{
+              background: '#FFEBEE',
+              borderRadius: '12px',
+              padding: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <AlertTriangle size={24} color="#f44336" />
+            </div>
+            <div>
+              <div style={{ fontSize: '14px', color: '#666' }}>缺货商品</div>
+              <div style={{ fontSize: '28px', fontWeight: '600', color: '#f44336' }}>
+                {outOfStockItems.length}
+              </div>
+            </div>
+          </div>
+          {showOutOfStockDetails ? <ChevronUp size={20} color="#f44336" /> : <ChevronDown size={20} color="#f44336" />}
+        </div>
+      </div>
 
       {/* 缺货商品详情 */}
       {showOutOfStockDetails && outOfStockItems.length > 0 && (
@@ -438,31 +444,37 @@ const Inventory = ({ refreshStats }) => {
             width: '100%',
             position: 'relative'
           }}>
-            <table className="table" style={{ minWidth: '600px', width: '100%' }}>
+            <table className="table" style={{ minWidth: '800px', width: '100%' }}>
               <thead>
                 <tr style={{ background: '#FFEBEE' }}>
-                  <th style={{ padding: '16px 12px', fontWeight: '600', color: '#D32F2F', textAlign: 'left', borderBottom: '2px solid #FFCDD2' }}>服装名称</th>
-                  <th style={{ padding: '16px 12px', fontWeight: '600', color: '#D32F2F', textAlign: 'left', borderBottom: '2px solid #FFCDD2' }}>服装编码</th>
-                  <th style={{ padding: '16px 12px', fontWeight: '600', color: '#D32F2F', textAlign: 'left', borderBottom: '2px solid #FFCDD2' }}>品类</th>
-                  <th style={{ padding: '16px 12px', fontWeight: '600', color: '#D32F2F', textAlign: 'left', borderBottom: '2px solid #FFCDD2' }}>尺码</th>
-                  <th style={{ padding: '16px 12px', fontWeight: '600', color: '#D32F2F', textAlign: 'left', borderBottom: '2px solid #FFCDD2' }}>颜色</th>
-                  <th style={{ padding: '16px 12px', fontWeight: '600', color: '#D32F2F', textAlign: 'right', borderBottom: '2px solid #FFCDD2' }}>库存状态</th>
+                  <th style={{ padding: '8px 12px', fontWeight: '600', color: '#D32F2F', textAlign: 'left', borderBottom: '2px solid #FFCDD2' }}>服装编码</th>
+                  <th style={{ padding: '8px 12px', fontWeight: '600', color: '#D32F2F', textAlign: 'left', borderBottom: '2px solid #FFCDD2' }}>服装名称</th>
+                  <th style={{ padding: '8px 12px', fontWeight: '600', color: '#D32F2F', textAlign: 'left', borderBottom: '2px solid #FFCDD2' }}>品类</th>
+                  <th style={{ padding: '8px 12px', fontWeight: '600', color: '#D32F2F', textAlign: 'left', borderBottom: '2px solid #FFCDD2' }}>尺码</th>
+                  <th style={{ padding: '8px 12px', fontWeight: '600', color: '#D32F2F', textAlign: 'left', borderBottom: '2px solid #FFCDD2' }}>颜色</th>
+                  <th style={{ padding: '8px 12px', fontWeight: '600', color: '#D32F2F', textAlign: 'right', borderBottom: '2px solid #FFCDD2' }}>进货价格</th>
+                  <th style={{ padding: '8px 12px', fontWeight: '600', color: '#D32F2F', textAlign: 'right', borderBottom: '2px solid #FFCDD2' }}>销售价格</th>
+                  <th style={{ padding: '8px 12px', fontWeight: '600', color: '#D32F2F', textAlign: 'right', borderBottom: '2px solid #FFCDD2' }}>库存状态</th>
                 </tr>
               </thead>
               <tbody>
-                {outOfStockItems.map((item, index) => (
+                {outOfStockItems
+                  .sort((a, b) => a.clothing.code.localeCompare(b.clothing.code)) // 按服装编码排序
+                  .map((item, index) => (
                   <tr key={item.id} style={{
                     transition: 'background-color 0.2s ease',
                     backgroundColor: index % 2 === 0 ? '#ffffff' : '#FFEBEE'
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FFEBEE'}
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = index % 2 === 0 ? '#ffffff' : '#FFEBEE'}>
-                    <td style={{ padding: '16px 12px', fontWeight: '600', color: '#D32F2F', borderBottom: '1px solid #FFCDD2' }}>{item.clothing.name}</td>
-                    <td style={{ padding: '16px 12px', color: '#666', borderBottom: '1px solid #FFCDD2' }}>{item.clothing.code}</td>
-                    <td style={{ padding: '16px 12px', color: '#666', borderBottom: '1px solid #FFCDD2' }}>{item.clothing.category}</td>
-                    <td style={{ padding: '16px 12px', color: '#666', borderBottom: '1px solid #FFCDD2' }}>{item.clothing.size}</td>
-                    <td style={{ padding: '16px 12px', color: '#666', borderBottom: '1px solid #FFCDD2' }}>{item.clothing.color}</td>
-                    <td style={{ padding: '16px 12px', textAlign: 'right', borderBottom: '1px solid #FFCDD2' }}>
+                    <td style={{ padding: '8px 12px', fontWeight: '600', color: '#D32F2F', borderBottom: '1px solid #FFCDD2' }}>{item.clothing.code}</td>
+                    <td style={{ padding: '8px 12px', fontWeight: '600', color: '#D32F2F', borderBottom: '1px solid #FFCDD2' }}>{item.clothing.name}</td>
+                    <td style={{ padding: '8px 12px', color: '#666', borderBottom: '1px solid #FFCDD2' }}>{item.clothing.category}</td>
+                    <td style={{ padding: '8px 12px', color: '#666', borderBottom: '1px solid #FFCDD2' }}>{item.clothing.size}</td>
+                    <td style={{ padding: '8px 12px', color: '#666', borderBottom: '1px solid #FFCDD2' }}>{item.clothing.color}</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#666', borderBottom: '1px solid #FFCDD2' }}>¥{item.clothing.purchasePrice.toFixed(2)}</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#666', borderBottom: '1px solid #FFCDD2' }}>¥{item.clothing.sellingPrice.toFixed(2)}</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', borderBottom: '1px solid #FFCDD2' }}>
                       <span style={{
                         padding: '6px 14px',
                         borderRadius: '16px',

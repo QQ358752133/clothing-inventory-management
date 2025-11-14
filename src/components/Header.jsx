@@ -1,5 +1,4 @@
 import React from 'react'
-import { Store } from 'lucide-react'
 
 const Header = () => {
   return (
@@ -46,7 +45,6 @@ const Header = () => {
             textOverflow: 'ellipsis'
           }}>
             梅静时光
-            <Store size={20} />
           </h1>
           <p style={{
             margin: '4px 0 0 0',

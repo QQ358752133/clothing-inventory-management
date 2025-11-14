@@ -160,10 +160,11 @@ const Reports = () => {
   const calculateTotalInventoryValue = async (clothes) => {
     try {
       const inventory = await db.inventory.toArray()
-      return inventory.reduce((total, inv) => {
+      const total = inventory.reduce((sum, inv) => {
         const clothing = clothes.find(c => c.id === inv.clothingId)
-        return total + (clothing ? inv.quantity * clothing.purchasePrice : 0)
+        return sum + (clothing ? inv.quantity * clothing.purchasePrice : 0)
       }, 0)
+      return Math.round(total * 100) / 100 // 确保总价值精度
     } catch (error) {
       return 0
     }

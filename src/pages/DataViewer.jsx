@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Database, Search, RefreshCw, Download } from 'lucide-react'
 import { db } from '../db/database'
 import { useMediaQuery } from '../hooks/useMediaQuery'
+import Alert from '../components/Alert'
 
 // 查看更多按钮组件
 const ViewMoreButton = ({ record, table }) => {
@@ -69,7 +70,13 @@ const DataViewer = () => {
   const [records, setRecords] = useState([])
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [selectedRecords, setSelectedRecords] = useState([]) // 选中的记录ID数组
+  const [selectAll, setSelectAll] = useState(false) // 全选状态
   const isMobile = useMediaQuery('(max-width: 768px)')
+  const [isDeleting, setIsDeleting] = useState(false) // 删除按钮加载状态
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
+  const [alertMessage, setAlertMessage] = useState('')
+  const [alertType, setAlertType] = useState('')
 
   useEffect(() => {
     loadRecords()
@@ -157,6 +164,72 @@ const DataViewer = () => {
     linkElement.click()
   }
 
+  // 处理单个记录选择
+  const handleRecordSelect = (recordId) => {
+    setSelectedRecords(prev => {
+      if (prev.includes(recordId)) {
+        return prev.filter(id => id !== recordId)
+      } else {
+        return [...prev, recordId]
+      }
+    })
+    setSelectAll(false) // 如果取消选择，全选状态也应该取消
+  }
+
+  // 处理全选
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedRecords([])
+      setSelectAll(false)
+    } else {
+      const allIds = filteredRecords.map(record => record.id)
+      setSelectedRecords(allIds)
+      setSelectAll(true)
+    }
+  }
+
+  // 打开确认删除对话框
+  const handleOpenConfirmDialog = () => {
+    if (selectedRecords.length === 0) {
+      setAlertMessage('请先选择要删除的记录')
+      setAlertType('warning')
+      return
+    }
+    setShowConfirmDialog(true)
+  }
+
+  // 关闭确认删除对话框
+  const handleCloseConfirmDialog = () => {
+    setShowConfirmDialog(false)
+  }
+
+  // 删除选中的记录
+  const handleDeleteSelected = async () => {
+    setShowConfirmDialog(false)
+    try {
+      setIsDeleting(true)
+      
+      for (const recordId of selectedRecords) {
+        await db[selectedTable].delete(recordId)
+      }
+
+      // 重新加载数据
+      loadRecords()
+      // 清空选中状态
+      setSelectedRecords([])
+      setSelectAll(false)
+      
+      setAlertMessage('删除成功')
+      setAlertType('success')
+    } catch (error) {
+      console.error('删除记录失败:', error)
+      setAlertMessage('删除失败，请重试')
+      setAlertType('error')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   const getTableHeaders = () => {
     if (records.length === 0) return []
     return Object.keys(records[0])
@@ -239,6 +312,31 @@ const DataViewer = () => {
             </div>
           </div>
         </div>
+        
+        {/* 删除按钮，仅在入库和出库记录中显示 */}
+        {(selectedTable === 'stockIn' || selectedTable === 'stockOut') && (
+          <div style={{ marginBottom: '16px' }}>
+            <button
+              onClick={handleOpenConfirmDialog}
+              disabled={selectedRecords.length === 0 || isDeleting}
+              className="btn"
+              style={{
+                backgroundColor: '#f44336',
+                color: 'white',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '4px',
+                cursor: selectedRecords.length === 0 || isDeleting ? 'not-allowed' : 'pointer',
+                fontSize: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              {isDeleting ? '删除中...' : `删除选中 (${selectedRecords.length})`}
+            </button>
+          </div>
+        )}
 
         <div style={{ 
           maxHeight: '70vh', 
@@ -267,6 +365,47 @@ const DataViewer = () => {
             isMobile ? (
                 // 移动设备：卡片式布局
                 <div style={{ padding: '8px' }}>
+                  {/* 移动端删除按钮 */}
+                  {(selectedTable === 'stockIn' || selectedTable === 'stockOut') && selectedRecords.length > 0 && (
+                    <div style={{ marginBottom: '16px', padding: '8px', backgroundColor: '#fff3f3', borderRadius: '4px' }}>
+                      <button
+                        onClick={handleOpenConfirmDialog}
+                        disabled={isDeleting}
+                        style={{
+                          backgroundColor: '#f44336',
+                          color: 'white',
+                          border: 'none',
+                          padding: '8px 16px',
+                          borderRadius: '4px',
+                          cursor: isDeleting ? 'not-allowed' : 'pointer',
+                          fontSize: '14px',
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        {isDeleting ? '删除中...' : `删除选中 (${selectedRecords.length})`}
+                      </button>
+                    </div>
+                  )}
+                  
+                  {/* 移动端全选按钮 */}
+                  {(selectedTable === 'stockIn' || selectedTable === 'stockOut') && filteredRecords.length > 0 && (
+                    <div style={{ marginBottom: '12px', padding: '8px', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={selectAll}
+                          onChange={handleSelectAll}
+                          style={{ marginRight: '8px', cursor: 'pointer' }}
+                        />
+                        <span style={{ fontSize: '14px', color: '#666' }}>全选</span>
+                      </label>
+                    </div>
+                  )}
+                  
                   {filteredRecords.map((record, recordIndex) => (
                     <div 
                       key={recordIndex} 
@@ -279,6 +418,21 @@ const DataViewer = () => {
                         boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
                       }}
                     >
+                      {/* 复选框，仅在入库和出库记录中显示 */}
+                      {(selectedTable === 'stockIn' || selectedTable === 'stockOut') && (
+                        <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                            <input
+                              type="checkbox"
+                              checked={selectedRecords.includes(record.id)}
+                              onChange={() => handleRecordSelect(record.id)}
+                              style={{ marginRight: '8px', cursor: 'pointer' }}
+                            />
+                            <span style={{ fontSize: '14px', color: '#666' }}>选择</span>
+                          </label>
+                        </div>
+                      )}
+                      
                       {/* 简化显示，只显示最重要的字段 */}
                       {getImportantFields(selectedTable).map((field) => (
                         <div key={field} style={{ marginBottom: '6px', display: 'flex', flexDirection: 'column' }}>
@@ -305,6 +459,24 @@ const DataViewer = () => {
                       position: 'sticky',
                       top: 0
                     }}>
+                      {/* 复选框列，仅在入库和出库记录中显示 */}
+                      {(selectedTable === 'stockIn' || selectedTable === 'stockOut') && (
+                        <th key="checkbox" style={{
+                          padding: '12px',
+                          textAlign: 'center',
+                          borderBottom: '1px solid #e0e0e0',
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          width: '40px'
+                        }}>
+                          <input
+                            type="checkbox"
+                            checked={selectAll}
+                            onChange={handleSelectAll}
+                            style={{ cursor: 'pointer' }}
+                          />
+                        </th>
+                      )}
                       {getTableHeaders().map((header, index) => (
                         <th key={index} style={{
                           padding: '12px',
@@ -324,6 +496,23 @@ const DataViewer = () => {
                         borderBottom: '1px solid #f0f0f0',
                         backgroundColor: recordIndex % 2 === 0 ? '#fff' : '#fafafa'
                       }}>
+                        {/* 复选框列，仅在入库和出库记录中显示 */}
+                        {(selectedTable === 'stockIn' || selectedTable === 'stockOut') && (
+                          <td key="checkbox" style={{
+                            padding: '12px',
+                            textAlign: 'center',
+                            fontSize: '14px',
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-word'
+                          }}>
+                            <input
+                              type="checkbox"
+                              checked={selectedRecords.includes(record.id)}
+                              onChange={() => handleRecordSelect(record.id)}
+                              style={{ cursor: 'pointer' }}
+                            />
+                          </td>
+                        )}
                         {getTableHeaders().map((header, index) => (
                         <td key={index} style={{
                           padding: '12px',
@@ -353,6 +542,94 @@ const DataViewer = () => {
           <span>共 {records.length} 条记录，显示 {filteredRecords.length} 条</span>
         </div>
       </div>
+
+      <Alert message={alertMessage} type={alertType} onClose={() => setAlertMessage('')} />
+
+      {/* 自定义确认删除对话框 */}
+      {showConfirmDialog && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '24px',
+            maxWidth: '90%',
+            width: isMobile ? '90%' : '400px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)'
+          }}>
+            <h3 style={{
+              margin: '0 0 16px 0',
+              fontSize: isMobile ? '18px' : '20px',
+              fontWeight: 'bold',
+              color: '#333'
+            }}>
+              确认删除
+            </h3>
+            <p style={{
+              margin: '0 0 24px 0',
+              fontSize: isMobile ? '14px' : '16px',
+              color: '#666',
+              lineHeight: '1.5'
+            }}>
+              确定要删除选中的 {selectedRecords.length} 条记录吗？
+              <br />
+              <span style={{ color: '#f44336', fontWeight: 'bold' }}>
+                此操作不可恢复！
+              </span>
+            </p>
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'flex-end'
+            }}>
+              <button
+                onClick={handleCloseConfirmDialog}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  border: '1px solid #ddd',
+                  backgroundColor: 'white',
+                  color: '#333',
+                  fontSize: isMobile ? '14px' : '16px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  flex: 1
+                }}
+              >
+                取消
+              </button>
+              <button
+                onClick={handleDeleteSelected}
+                disabled={isDeleting}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: '#f44336',
+                  color: 'white',
+                  fontSize: isMobile ? '14px' : '16px',
+                  fontWeight: 'bold',
+                  cursor: isDeleting ? 'not-allowed' : 'pointer',
+                  opacity: isDeleting ? 0.7 : 1,
+                  flex: 1
+                }}
+              >
+                {isDeleting ? '删除中...' : '确认删除'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

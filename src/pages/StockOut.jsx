@@ -124,9 +124,15 @@ const StockOut = ({ refreshStats }) => {
           const inventoryItem = inventory.find(inv => inv.clothingId === parseInt(value))
           
           if (selectedClothing) {
-            updatedItem.sellingPrice = parseFloat(parseFloat(selectedClothing.sellingPrice).toFixed(2))
+            // 确保价格精度，避免浮点数误差
+            updatedItem.sellingPrice = Math.round(selectedClothing.sellingPrice * 100) / 100
             updatedItem.availableQuantity = inventoryItem ? inventoryItem.quantity : 0
           }
+        }
+        
+        // 如果直接修改销售价格，也确保精度
+        if (field === 'sellingPrice') {
+          updatedItem.sellingPrice = Math.round(parseFloat(value) * 100) / 100
         }
         
         return updatedItem
@@ -180,7 +186,7 @@ const StockOut = ({ refreshStats }) => {
         await db.stockOut.add({
           clothingId: parseInt(item.clothingId),
           quantity: parseInt(item.quantity),
-          sellingPrice: parseFloat(parseFloat(item.sellingPrice).toFixed(2)), // 确保价格精度
+          sellingPrice: Math.round(parseFloat(item.sellingPrice) * 100) / 100, // 确保价格精度，避免浮点数误差
           totalAmount: calculatedTotalAmount, // 使用精确计算的总金额
           date: formData.date,
           operator: formData.operator || '未知操作员',
@@ -244,21 +250,23 @@ const StockOut = ({ refreshStats }) => {
   })
 
   const calculateTotalAmount = () => {
-    return stockOutItems.reduce((total, item) => {
-      return total + (item.quantity * item.sellingPrice)
+    const total = stockOutItems.reduce((sum, item) => {
+      return sum + (item.quantity * item.sellingPrice)
     }, 0)
+    return Math.round(total * 100) / 100
   }
 
   const calculateProfit = () => {
-    return stockOutItems.reduce((profit, item) => {
+    const profit = stockOutItems.reduce((sum, item) => {
       const clothing = clothes.find(c => c.id === parseInt(item.clothingId))
       if (clothing) {
         const cost = item.quantity * clothing.purchasePrice
         const revenue = item.quantity * item.sellingPrice
-        return profit + (revenue - cost)
+        return sum + (revenue - cost)
       }
-      return profit
+      return sum
     }, 0)
+    return Math.round(profit * 100) / 100
   }
 
   return (
@@ -360,7 +368,7 @@ const StockOut = ({ refreshStats }) => {
               justifyContent: 'space-between',
               marginBottom: '16px'
             }}>
-              <h3 style={{ fontSize: '16px', fontWeight: '600' }}>销售项目</h3>
+              <h3 style={{ fontSize: '16px', fontWeight: '600' }}>销售商品</h3>
               <button 
                 type="button"
                 onClick={addStockOutItem}
@@ -390,7 +398,7 @@ const StockOut = ({ refreshStats }) => {
                 borderRadius: '8px'
               }}>
                 <PackageMinus size={32} color="#ccc" style={{ marginBottom: '16px' }} />
-                <p>暂无销售项目</p>
+                <p>暂无销售商品</p>
                 <p style={{ fontSize: '14px', marginTop: '8px' }}>
                   点击"添加项目"按钮开始添加销售服装
                 </p>
@@ -408,7 +416,7 @@ const StockOut = ({ refreshStats }) => {
                       justifyContent: 'space-between',
                       marginBottom: '12px'
                     }}>
-                      <span style={{ fontWeight: '600' }}>销售项目 {index + 1}</span>
+                      <span style={{ fontWeight: '600' }}>销售商品 {index + 1}</span>
                       <button
                         type="button"
                         onClick={() => removeStockOutItem(item.id)}
@@ -458,6 +466,7 @@ const StockOut = ({ refreshStats }) => {
                           required
                           value={item.quantity}
                           onChange={(e) => updateStockOutItem(item.id, 'quantity', e.target.value)}
+                          onWheel={(e) => e.target.blur()}
                           className="form-input"
                           placeholder="1"
                         />
@@ -475,6 +484,7 @@ const StockOut = ({ refreshStats }) => {
                           required
                           value={item.sellingPrice}
                           onChange={(e) => updateStockOutItem(item.id, 'sellingPrice', e.target.value)}
+                          onWheel={(e) => e.target.blur()}
                           className="form-input"
                           placeholder="0.00"
                         />

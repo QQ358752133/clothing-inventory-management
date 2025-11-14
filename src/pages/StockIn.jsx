@@ -81,15 +81,44 @@ const StockIn = ({ refreshStats }) => {
     code: '',
     name: '',
     category: '',
-    size: '',
-    color: '',
-    customColor: '',
     categoryCustom: '',
     purchasePrice: '',
     sellingPrice: '',
-    quantity: 1,
     remark: ''
   })
+  
+  // 多颜色多尺码选择状态
+  const [selectedSizes, setSelectedSizes] = useState([])
+  const [selectedColors, setSelectedColors] = useState([])
+  const [customColorInput, setCustomColorInput] = useState('')
+  const [quantityMatrix, setQuantityMatrix] = useState({}) // 存储每种颜色+尺码组合的数量
+  const [addedItems, setAddedItems] = useState([]) // 存储已添加的商品详情
+
+  // 监听颜色和尺码选择变化，自动更新数量矩阵
+  useEffect(() => {
+    // 保留已有的数量数据，只添加新的颜色-尺码组合
+    const updatedMatrix = { ...quantityMatrix }
+    
+    // 为每个颜色-尺码组合确保有一个键存在
+    for (const color of selectedColors) {
+      for (const size of selectedSizes) {
+        const key = `${color}-${size}`
+        if (updatedMatrix[key] === undefined) {
+          updatedMatrix[key] = '' // 新组合默认为空
+        }
+      }
+    }
+    
+    // 移除不再存在的颜色-尺码组合
+    for (const key in updatedMatrix) {
+      const [color, size] = key.split('-')
+      if (!selectedColors.includes(color) || !selectedSizes.includes(size)) {
+        delete updatedMatrix[key]
+      }
+    }
+    
+    setQuantityMatrix(updatedMatrix)
+  }, [selectedColors, selectedSizes])
 
   useEffect(() => {
     loadClothes()
@@ -106,7 +135,7 @@ const StockIn = ({ refreshStats }) => {
   
   // 新增服装的尺码、颜色、品类常量
   const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
-  const colors = ['黑色', '白色', '红色', '蓝色', '绿色', '黄色', '紫色', '灰色', '棕色', '粉色', '橙色', '青色']
+  const colors = ['黑色', '白色', '红色', '蓝色', '绿色', '黄色', '紫色', '灰色', '棕色', '粉色', '橙色', '青色', '卡其色', '米白色', '驼色', '米色', '香槟色', '珊瑚色', '薄荷绿', '雾霾蓝', '砖红色', '浅紫色', '鹅黄色', '奶茶色', '烟灰色']
   const categories = ['连衣裙', '上衣', 'T恤', '衬衫', '卫衣', '毛衣', '外套', '牛仔裤', '休闲裤', '短裙', '长裙', '半身裙', '短裤', '阔腿裤', '西装裤', '运动裤', '针织衫', '背心', '吊带裙', '背带裤']
   
   // 重置新增服装表单 - 只重置数据，不隐藏表单
@@ -115,76 +144,179 @@ const StockIn = ({ refreshStats }) => {
       code: '',
       name: '',
       category: '',
-      size: '',
-      color: '',
-      customColor: '',
       categoryCustom: '',
       purchasePrice: '',
       sellingPrice: '',
-      quantity: 1,
       remark: ''
     })
+    // 重置多颜色多尺码相关状态
+    setSelectedSizes([])
+    setSelectedColors([])
+    setCustomColorInput('')
+    setQuantityMatrix({})
   }
   
   // 提交新增服装表单并直接入库
   const handleAddClothingSubmit = async (e) => {
     e.preventDefault()
     try {
-      // 验证数量
-      if (parseInt(addClothingFormData.quantity) <= 0) {
-        alert('请输入有效的入库数量')
+      // 验证颜色和尺码是否选择
+      if (selectedColors.length === 0) {
+        alert('请至少选择一种颜色')
+        return
+      }
+      if (selectedSizes.length === 0) {
+        alert('请至少选择一种尺码')
         return
       }
       
-      // 处理自定义颜色
-      const finalColor = (addClothingFormData.color === '其他' && addClothingFormData.customColor) ? addClothingFormData.customColor : addClothingFormData.color
+      // 验证是否至少有一个数量大于0
+      let hasValidQuantity = false
+      for (const color of selectedColors) {
+        for (const size of selectedSizes) {
+          const key = `${color}-${size}`
+          const quantity = quantityMatrix[key]
+          if (quantity && quantity > 0) {
+            hasValidQuantity = true
+            break
+          }
+        }
+        if (hasValidQuantity) break
+      }
+      
+      if (!hasValidQuantity) {
+        alert('请至少为一种颜色和尺码的组合输入大于0的数量')
+        return
+      }
+      
       // 处理自定义品类
       const finalCategory = (addClothingFormData.category === '其他' && addClothingFormData.categoryCustom) ? addClothingFormData.categoryCustom : addClothingFormData.category
       
       // 新增服装，确保价格精度
-      const newClothingId = await db.clothes.add({
-        ...addClothingFormData,
-        color: finalColor,
-        category: finalCategory,
-        purchasePrice: parseFloat(parseFloat(addClothingFormData.purchasePrice).toFixed(2)),
-        sellingPrice: parseFloat(parseFloat(addClothingFormData.sellingPrice).toFixed(2)),
-        createdAt: new Date(),
-        updatedAt: new Date()
-      })
+      const purchasePrice = Math.round(parseFloat(addClothingFormData.purchasePrice) * 100) / 100
+      const sellingPrice = Math.round(parseFloat(addClothingFormData.sellingPrice) * 100) / 100
       
-      const purchasePrice = parseFloat(parseFloat(addClothingFormData.purchasePrice).toFixed(2))
-      const quantity = parseInt(addClothingFormData.quantity)
-      const totalAmount = purchasePrice * quantity
-      
-      // 添加入库记录
-      await db.stockIn.add({
-        clothingId: newClothingId,
-        quantity: quantity,
-        purchasePrice: purchasePrice,
-        totalAmount: totalAmount,
-        date: formData.date,
-        operator: formData.operator,
-        notes: addClothingFormData.remark,
-        createdAt: new Date()
-      })
-      
-      // 初始化并更新库存
-      await db.inventory.add({
-        clothingId: newClothingId,
-        quantity: quantity,
-        updatedAt: new Date()
-      })
+      // 批量处理每种颜色和尺码的组合
+      for (const color of selectedColors) {
+        for (const size of selectedSizes) {
+          const key = `${color}-${size}`
+          const quantity = quantityMatrix[key]
+          
+          if (!quantity || quantity <= 0) continue
+          
+          try {
+            // 检查相同颜色和尺码的服装是否已经存在
+            const existingClothing = await db.clothes.where({
+              code: addClothingFormData.code,
+              color: color,
+              size: size
+            }).first()
+            
+            let clothingId, isNewClothing = false
+            
+            if (existingClothing) {
+              // 服装已存在，更新价格信息
+              clothingId = existingClothing.id
+              await db.clothes.update(clothingId, {
+                purchasePrice: purchasePrice,
+                sellingPrice: sellingPrice,
+                updatedAt: new Date()
+              })
+              
+              // 更新库存
+              const existingInventory = await db.inventory.where('clothingId').equals(clothingId).first()
+              if (existingInventory) {
+                await db.inventory.update(existingInventory.id, {
+                  quantity: existingInventory.quantity + quantity,
+                  updatedAt: new Date()
+                })
+              } else {
+                // 如果库存记录不存在，创建新的
+                await db.inventory.add({
+                  clothingId: clothingId,
+                  quantity: quantity,
+                  updatedAt: new Date()
+                })
+              }
+            } else {
+              // 创建新的服装记录
+              clothingId = await db.clothes.add({
+                ...addClothingFormData,
+                color: color,
+                size: size,
+                category: finalCategory,
+                purchasePrice: purchasePrice,
+                sellingPrice: sellingPrice,
+                createdAt: new Date(),
+                updatedAt: new Date()
+              })
+              
+              // 初始化库存
+              await db.inventory.add({
+                clothingId: clothingId,
+                quantity: quantity,
+                updatedAt: new Date()
+              })
+              
+              isNewClothing = true
+            }
+            
+            const totalAmount = Math.round(purchasePrice * quantity * 100) / 100
+            
+            // 添加入库记录
+            await db.stockIn.add({
+              clothingId: clothingId,
+              quantity: quantity,
+              purchasePrice: purchasePrice,
+              totalAmount: totalAmount,
+              date: formData.date,
+              operator: formData.operator,
+              notes: addClothingFormData.remark,
+              createdAt: new Date()
+            })
+            
+            // 记录已添加的商品详情
+            setAddedItems(prev => [...prev, {
+              clothingId: clothingId,
+              code: addClothingFormData.code,
+              name: addClothingFormData.name,
+              color: color,
+              size: size,
+              quantity: quantity
+            }])
+            
+          } catch (itemError) {
+            console.error(`处理颜色 ${color} 和尺码 ${size} 时出错:`, itemError)
+            // 继续处理其他组合，不中断整个批量操作
+          }
+        }
+      }
       
       // 重新加载服装数据
       loadClothes()
-      resetAddClothingForm()
-      setAlertMessage('服装添加并入库成功！')
+      
+      // 重置表单
+      setAddClothingFormData({
+        code: '',
+        name: '',
+        category: '',
+        categoryCustom: '',
+        purchasePrice: '',
+        sellingPrice: '',
+        remark: ''
+      })
+      setSelectedSizes([])
+      setSelectedColors([])
+      setCustomColorInput('')
+      setQuantityMatrix({})
+      
+      setAlertMessage('服装批量添加并入库成功！')
       setAlertType('success')
       playSuccessSound() // 播放成功提示音
       refreshStats()
     } catch (error) {
-      console.error('保存服装信息失败:', error)
-      setAlertMessage('保存服装信息失败，请重试')
+      console.error('批量入库失败:', error)
+      setAlertMessage('批量入库失败，请重试')
       setAlertType('error')
     }
   }
@@ -325,56 +457,19 @@ const StockIn = ({ refreshStats }) => {
                   </div>
                   
                   <div className="form-group">
-                    <label className="form-label">尺码 *</label>
-                    <select
-                      required
-                      value={addClothingFormData.size}
-                      onChange={(e) => setAddClothingFormData({...addClothingFormData, size: e.target.value})}
-                      className="form-input"
-                    >
-                      <option value="">选择尺码</option>
-                      {sizes.map(size => (
-                        <option key={size} value={size}>{size}</option>
-                      ))}
-                    </select>
-                  </div>
-                  
-
-                  
-                  <div className="form-group">
-                    <label className="form-label">颜色 *</label>
-                    <select
-                      value={addClothingFormData.color}
-                      onChange={(e) => setAddClothingFormData({...addClothingFormData, color: e.target.value})}
-                      className="form-input"
-                      required
-                    >
-                      <option value="">选择颜色</option>
-                      {colors.map(color => (
-                        <option key={color} value={color}>{color}</option>
-                      ))}
-                      <option value="其他">其他</option>
-                    </select>
-                    {(addClothingFormData.color === '其他' || addClothingFormData.customColor) && (
-                      <input
-                        type="text"
-                        className="form-input"
-                        style={{ marginTop: '8px' }}
-                        value={addClothingFormData.customColor}
-                        onChange={(e) => setAddClothingFormData({...addClothingFormData, customColor: e.target.value})}
-                        placeholder="手动输入颜色名称"
-                      />
-                    )}
-                  </div>
-                  
-                  <div className="form-group">
                     <label className="form-label">进货价格 *</label>
                     <input
                       type="number"
                       step="0.01"
                       required
                       value={addClothingFormData.purchasePrice}
-                      onChange={(e) => setAddClothingFormData({...addClothingFormData, purchasePrice: e.target.value})}
+                      onChange={(e) => {
+                        // 在输入时就确保精度正确
+                        const value = e.target.value
+                        const roundedValue = value ? (Math.round(parseFloat(value) * 100) / 100).toString() : ''
+                        setAddClothingFormData({...addClothingFormData, purchasePrice: roundedValue})
+                      }}
+                      onWheel={(e) => e.target.blur()}
                       className="form-input"
                       placeholder="0.00"
                     />
@@ -387,24 +482,219 @@ const StockIn = ({ refreshStats }) => {
                       step="0.01"
                       required
                       value={addClothingFormData.sellingPrice}
-                      onChange={(e) => setAddClothingFormData({...addClothingFormData, sellingPrice: e.target.value})}
+                      onChange={(e) => {
+                        // 在输入时就确保精度正确
+                        const value = e.target.value
+                        const roundedValue = value ? (Math.round(parseFloat(value) * 100) / 100).toString() : ''
+                        setAddClothingFormData({...addClothingFormData, sellingPrice: roundedValue})
+                      }}
+                      onWheel={(e) => e.target.blur()}
                       className="form-input"
                       placeholder="0.00"
                     />
                   </div>
                   
                   <div className="form-group">
-                    <label className="form-label">入库数量 *</label>
-                    <input
-                      type="number"
-                      step="1"
-                      min="1"
-                      required
-                      value={addClothingFormData.quantity}
-                      onChange={(e) => setAddClothingFormData({...addClothingFormData, quantity: e.target.value})}
-                      className="form-input"
-                      placeholder="1"
-                    />
+                    <label className="form-label">尺码 *</label>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {sizes.map(size => (
+                        <label key={size} style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '4px',
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                          border: '1px solid #e5e7eb',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          backgroundColor: selectedSizes.includes(size) ? '#3b82f6' : 'white',
+                          color: selectedSizes.includes(size) ? 'white' : 'black'
+                        }}>
+                          <input
+                            type="checkbox"
+                            value={size}
+                            checked={selectedSizes.includes(size)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedSizes([...selectedSizes, size])
+                              } else {
+                                setSelectedSizes(selectedSizes.filter(s => s !== size))
+                              }
+                            }}
+                            style={{ margin: 0 }}
+                          />
+                          {size}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  
+
+                  
+                  <div className="form-group">
+                    <label className="form-label">颜色 *</label>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
+                      {colors.map(color => (
+                        <label key={color} style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '4px',
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                          border: '1px solid #e5e7eb',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          backgroundColor: selectedColors.includes(color) ? '#3b82f6' : 'white',
+                          color: selectedColors.includes(color) ? 'white' : 'black'
+                        }}>
+                          <input
+                            type="checkbox"
+                            value={color}
+                            checked={selectedColors.includes(color)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedColors([...selectedColors, color])
+                              } else {
+                                setSelectedColors(selectedColors.filter(c => c !== color))
+                              }
+                            }}
+                            style={{ margin: 0 }}
+                          />
+                          {color}
+                        </label>
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={customColorInput}
+                        onChange={(e) => setCustomColorInput(e.target.value)}
+                        placeholder="添加自定义颜色"
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={() => {
+                          if (customColorInput && !selectedColors.includes(customColorInput)) {
+                            setSelectedColors([...selectedColors, customColorInput])
+                            setCustomColorInput('')
+                          }
+                        }}
+                        style={{ minHeight: '44px' }}
+                      >
+                        添加
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label className="form-label">数量设置 *</label>
+                    <div style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: 'auto repeat(auto-fit, minmax(80px, 1fr))', 
+                      gap: '8px',
+                      alignItems: 'center',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: '8px',
+                      overflow: 'hidden'
+                    }}>
+                      {/* 表格头部 */}
+                      <div style={{ 
+                        backgroundColor: '#f8f9fa', 
+                        fontWeight: '600',
+                        padding: '12px 8px',
+                        borderBottom: '1px solid #e0e0e0'
+                      }}>
+                        颜色\尺码
+                      </div>
+                      
+                      {/* 表格内容 */}
+                      {selectedColors.length > 0 ? (
+                        selectedColors.map((color, colorIndex) => (
+                          <React.Fragment key={color}>
+                            {/* 颜色名称 */}
+                            <div style={{ 
+                              fontWeight: '500',
+                              padding: '12px 8px',
+                              backgroundColor: colorIndex % 2 === 0 ? '#ffffff' : '#fafafa',
+                              borderRight: '1px solid #e0e0e0'
+                            }}>
+                              {color}
+                            </div>
+                            
+                            {/* 每个尺码对应的数量输入 */}
+                            {selectedSizes.length > 0 ? (
+                              selectedSizes.map((size, sizeIndex) => {
+                                const key = `${color}-${size}`
+                                return (
+                                  <div 
+                                    key={key} 
+                                    style={{ 
+                                      padding: '8px',
+                                      backgroundColor: colorIndex % 2 === 0 ? '#ffffff' : '#fafafa',
+                                      borderBottom: sizeIndex === selectedSizes.length - 1 ? 'none' : '1px solid #e0e0e0'
+                                    }}
+                                  >
+                                    <input
+                                      type="number"
+                                      step="1"
+                                      min="0"
+                                      value={quantityMatrix[key] || ''}
+                                      onChange={(e) => {
+                                        const value = e.target.value ? parseInt(e.target.value) : ''
+                                        setQuantityMatrix(prev => ({
+                                          ...prev,
+                                          [key]: value
+                                        }))
+                                      }}
+                                      onWheel={(e) => e.target.blur()}
+                                      className="form-input"
+                                      placeholder={`${size}码数量`}
+                                      style={{ 
+                                        textAlign: 'center',
+                                        margin: 0,
+                                        border: '1px solid #d0d0d0',
+                                        borderRadius: '4px'
+                                      }}
+                                    />
+                                  </div>
+                                )
+                              })
+                            ) : (
+                              <div style={{ 
+                                gridColumn: '2 / -1',
+                                padding: '40px 20px', 
+                                textAlign: 'center', 
+                                backgroundColor: '#f8f9fa',
+                                color: '#6c757d',
+                                fontStyle: 'italic'
+                              }}>
+                                请选择尺码以添加数量
+                              </div>
+                            )}
+                          </React.Fragment>
+                        ))
+                      ) : (
+                        <div style={{ 
+                          gridColumn: '1 / -1',
+                          padding: '40px 20px', 
+                          textAlign: 'center', 
+                          backgroundColor: '#f8f9fa',
+                          color: '#6c757d',
+                          fontStyle: 'italic'
+                        }}>
+                          请先选择颜色和尺码以设置数量
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ 
+                      marginTop: '8px', 
+                      fontSize: '14px', 
+                      color: '#6c757d'
+                    }}>
+                      提示：选择颜色和尺码后，在对应单元格中输入数量，然后点击"保存并入库"
+                    </div>
                   </div>
                   
                   <div className="form-group">
@@ -429,6 +719,22 @@ const StockIn = ({ refreshStats }) => {
                   </button>
                 </div>
               </form>
+              
+              {/* 已添加商品详情展示区域 */}
+              {addedItems.length > 0 && (
+                <div style={{ marginTop: '24px', padding: '16px', border: '1px solid #e0e0e0', borderRadius: '8px', backgroundColor: '#fafafa' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px' }}>已添加的商品详情：</h3>
+                  <ul style={{ listStyleType: 'none', padding: 0, margin: 0 }}>
+                    {addedItems.map((item, index) => (
+                      <li key={item.clothingId || index} style={{ marginBottom: '8px', padding: '8px', backgroundColor: '#fff', borderRadius: '4px', border: '1px solid #f0f0f0' }}>
+                        {item.color}，{item.size}，数量{item.quantity}
+                        {item.code && <span style={{ marginLeft: '8px', color: '#666', fontSize: '14px' }}>（编码：{item.code}）</span>}
+                        {item.name && <span style={{ marginLeft: '8px', color: '#666', fontSize: '14px' }}>（名称：{item.name}）</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
         </div>

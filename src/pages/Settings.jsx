@@ -193,6 +193,7 @@ const Settings = () => {
               type="number"
               value={lowStockThreshold}
               onChange={(e) => setLowStockThreshold(e.target.value)}
+              onWheel={(e) => e.target.blur()}
               placeholder="请输入阈值"
               style={{
                 padding: '8px 12px',
