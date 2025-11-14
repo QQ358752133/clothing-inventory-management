@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import Header from './components/Header'
 import Navigation from './components/Navigation'
 import Dashboard from './pages/Dashboard'
@@ -10,9 +10,19 @@ import Inventory from './pages/Inventory'
 import Reports from './pages/Reports'
 import Settings from './pages/Settings'
 import DataViewer from './pages/DataViewer'
-import PWAInstallPrompt from './components/PWAInstallPrompt'
 import OfflineIndicator from './components/OfflineIndicator'
 import { db } from './db/database'
+
+// 路由切换时滚动到页面顶部的组件
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  
+  return null;
+}
 
 function App() {
   // Active tab state removed as menu is no longer needed
@@ -64,8 +74,8 @@ function App() {
 
   return (
     <Router>
+      <ScrollToTop />
       <div className="app">
-        <PWAInstallPrompt />
         <OfflineIndicator />
         <Header />
         <div className="app-content">
@@ -128,6 +138,29 @@ function App() {
               <Route 
                 path="/data-viewer" 
                 element={<DataViewer />} 
+              />
+              <Route 
+                path="/members" 
+                element={
+                  <div className="container" style={{ textAlign: 'center', padding: '60px 20px' }}>
+                    <div style={{ 
+                      maxWidth: '500px', 
+                      margin: '0 auto',
+                      background: 'white',
+                      borderRadius: '16px',
+                      padding: '40px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                    }}>
+                      <div style={{ fontSize: '60px', marginBottom: '20px' }}>🚧</div>
+                      <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: '#333', marginBottom: '12px' }}>
+                        开发中...
+                      </h1>
+                      <p style={{ fontSize: '16px', color: '#666', margin: '0' }}>
+                        会员系统功能正在紧张开发中，敬请期待！
+                      </p>
+                    </div>
+                  </div>
+                } 
               />
             </Routes>
           </main>
