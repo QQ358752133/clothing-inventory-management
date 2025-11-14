@@ -147,7 +147,7 @@ const Inventory = ({ refreshStats }) => {
                         <td style={{ padding: '4px 3px !important', fontWeight: '600', color: '#333', borderBottom: '1px solid #f0f0f0', position: 'sticky', left: 0, background: index % 2 === 0 ? '#ffffff' : '#fafafa', zIndex: 5, width: '75px !important' }}>{item.clothing.code}</td>
                         <td style={{ padding: '4px 0px !important', color: '#333', borderBottom: '1px solid #f0f0f0', position: 'sticky', left: 75, background: index % 2 === 0 ? '#ffffff' : '#fafafa', zIndex: 5, width: '90px !important' }}>{item.clothing.name}</td>
                         <td style={{ padding: '4px 0px !important', textAlign: 'right', color: '#666', borderBottom: '1px solid #f0f0f0' }}>¥{item.clothing.purchasePrice.toFixed(2)}</td>
-                        <td style={{ padding: '4px 3px !important', textAlign: 'right', color: '#666', borderBottom: '1px solid #f0f0f0' }}>¥{item.clothing.sellingPrice.toFixed(2)}</td>
+                        <td style={{ padding: '4px 3px !important', textAlign: 'right', color: '#f44336', fontWeight: '600', borderBottom: '1px solid #f0f0f0' }}>¥{item.clothing.sellingPrice.toFixed(2)}</td>
                         <td style={{ padding: '4px 3px !important', color: '#666', borderBottom: '1px solid #f0f0f0' }}>{item.clothing.category}</td>
                         <td style={{ padding: '4px 3px !important', color: '#666', borderBottom: '1px solid #f0f0f0' }}>{item.clothing.size}</td>
                         <td style={{ padding: '4px 3px !important', color: '#666', borderBottom: '1px solid #f0f0f0' }}>{item.clothing.color}</td>
@@ -362,7 +362,7 @@ const Inventory = ({ refreshStats }) => {
                     <td style={{ padding: '8px 12px', color: '#666', borderBottom: '1px solid #FFE0B2' }}>{item.clothing.size}</td>
                     <td style={{ padding: '8px 12px', color: '#666', borderBottom: '1px solid #FFE0B2' }}>{item.clothing.color}</td>
                     <td style={{ padding: '8px 12px', textAlign: 'right', color: '#666', borderBottom: '1px solid #FFE0B2' }}>¥{item.clothing.purchasePrice.toFixed(2)}</td>
-                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#666', borderBottom: '1px solid #FFE0B2' }}>¥{item.clothing.sellingPrice.toFixed(2)}</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#f44336', fontWeight: '600', borderBottom: '1px solid #FFE0B2' }}>¥{item.clothing.sellingPrice.toFixed(2)}</td>
                     <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: '600', color: '#FF9800', borderBottom: '1px solid #FFE0B2' }}>{item.quantity} 件</td>
                     <td style={{ padding: '8px 12px', textAlign: 'right', color: '#666', borderBottom: '1px solid #FFE0B2' }}>{lowStockThreshold} 件</td>
                   </tr>
@@ -473,7 +473,7 @@ const Inventory = ({ refreshStats }) => {
                     <td style={{ padding: '8px 12px', color: '#666', borderBottom: '1px solid #FFCDD2' }}>{item.clothing.size}</td>
                     <td style={{ padding: '8px 12px', color: '#666', borderBottom: '1px solid #FFCDD2' }}>{item.clothing.color}</td>
                     <td style={{ padding: '8px 12px', textAlign: 'right', color: '#666', borderBottom: '1px solid #FFCDD2' }}>¥{item.clothing.purchasePrice.toFixed(2)}</td>
-                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#666', borderBottom: '1px solid #FFCDD2' }}>¥{item.clothing.sellingPrice.toFixed(2)}</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#f44336', fontWeight: '600', borderBottom: '1px solid #FFCDD2' }}>¥{item.clothing.sellingPrice.toFixed(2)}</td>
                     <td style={{ padding: '8px 12px', textAlign: 'right', borderBottom: '1px solid #FFCDD2' }}>
                       <span style={{
                         padding: '6px 14px',

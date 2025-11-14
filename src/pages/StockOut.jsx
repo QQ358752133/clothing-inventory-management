@@ -76,11 +76,24 @@ const StockOut = ({ refreshStats }) => {
     sellingPrice: 0,
     availableQuantity: 0
   }])
+  // 使用getCurrentDate函数获取当前日期，确保准确性
+  const getCurrentDate = () => {
+    const now = new Date()
+    // 使用本地日期格式化，避免时区偏差
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
   const [formData, setFormData] = useState({
-    date: new Date().toISOString().split('T')[0],
+    date: getCurrentDate(),
     operator: '店长-符文静',
     notes: ''
   })
+  // 页面加载时更新日期，确保即使组件被缓存也能获取最新日期
+  useEffect(() => {
+    setFormData(prev => ({ ...prev, date: getCurrentDate() }))
+  }, [])
   
   // 自定义弹窗状态
   const [alertMessage, setAlertMessage] = useState('')
