@@ -148,7 +148,13 @@ const StockIn = ({ refreshStats }) => {
   
   // 新增服装的尺码、颜色、品类常量
   const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
-  const colors = ['黑色', '白色', '红色', '蓝色', '绿色', '黄色', '紫色', '灰色', '棕色', '粉色', '橙色', '青色', '卡其色', '米白色', '驼色', '米色', '香槟色', '珊瑚色', '薄荷绿', '雾霾蓝', '砖红色', '浅紫色', '鹅黄色', '奶茶色', '烟灰色']
+  // 按字数排序颜色：先显示两个字的颜色，再显示三个字的颜色
+  const colors = [
+    // 两个字的颜色
+    '黑色', '白色', '红色', '蓝色', '绿色', '黄色', '紫色', '灰色', '棕色', '粉色', '橙色', '青色', '驼色', '米色',
+    // 三个字的颜色
+    '卡其色', '米白色', '香槟色', '珊瑚色', '薄荷绿', '雾霾蓝', '砖红色', '浅紫色', '鹅黄色', '奶茶色', '烟灰色'
+  ]
   const categories = ['连衣裙', '上衣', 'T恤', '衬衫', '卫衣', '毛衣', '外套', '牛仔裤', '休闲裤', '短裙', '长裙', '半身裙', '短裤', '阔腿裤', '西装裤', '运动裤', '针织衫', '背心', '吊带裙', '背带裤']
   
   // 重置新增服装表单 - 只重置数据，不隐藏表单
@@ -558,7 +564,8 @@ const StockIn = ({ refreshStats }) => {
                           cursor: 'pointer',
                           transition: 'all 0.2s',
                           backgroundColor: selectedColors.includes(color) ? '#3b82f6' : 'white',
-                          color: selectedColors.includes(color) ? 'white' : 'black'
+                          color: selectedColors.includes(color) ? 'white' : 'black',
+                          fontSize: color.length === 3 ? '12px' : '14px' // 三个字的颜色使用更小的字体
                         }}>
                           <input
                             type="checkbox"
