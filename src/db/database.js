@@ -198,19 +198,20 @@ export class ClothingInventoryDB extends Dexie {
       onValue(ref(firebaseDatabase, 'clothes'), (snapshot) => {
         try {
           const data = snapshot.val()
-          if (data) {
-            this.clothes.clear().then(() => {
+          this.clothes.clear().then(() => {
+            if (data) {
               const promises = []
               for (const key in data) {
                 promises.push(this.clothes.add(data[key]))
               }
               return Promise.all(promises)
-            }).then(() => {
-              console.log('服装数据已从Firebase实时更新')
-            }).catch(error => {
-              console.error('更新本地服装数据失败:', error)
-            })
-          }
+            }
+            return Promise.resolve()
+          }).then(() => {
+            console.log('服装数据已从Firebase实时更新')
+          }).catch(error => {
+            console.error('更新本地服装数据失败:', error)
+          })
         } catch (error) {
           console.error('处理服装数据变化时出错:', error)
         }
@@ -220,19 +221,20 @@ export class ClothingInventoryDB extends Dexie {
       onValue(ref(firebaseDatabase, 'inventory'), (snapshot) => {
         try {
           const data = snapshot.val()
-          if (data) {
-            this.inventory.clear().then(() => {
+          this.inventory.clear().then(() => {
+            if (data) {
               const promises = []
               for (const key in data) {
                 promises.push(this.inventory.add(data[key]))
               }
               return Promise.all(promises)
-            }).then(() => {
-              console.log('库存数据已从Firebase实时更新')
-            }).catch(error => {
-              console.error('更新本地库存数据失败:', error)
-            })
-          }
+            }
+            return Promise.resolve()
+          }).then(() => {
+            console.log('库存数据已从Firebase实时更新')
+          }).catch(error => {
+            console.error('更新本地库存数据失败:', error)
+          })
         } catch (error) {
           console.error('处理库存数据变化时出错:', error)
         }
@@ -242,19 +244,20 @@ export class ClothingInventoryDB extends Dexie {
       onValue(ref(firebaseDatabase, 'stockIn'), (snapshot) => {
         try {
           const data = snapshot.val()
-          if (data) {
-            this.stockIn.clear().then(() => {
+          this.stockIn.clear().then(() => {
+            if (data) {
               const promises = []
               for (const key in data) {
                 promises.push(this.stockIn.add(data[key]))
               }
               return Promise.all(promises)
-            }).then(() => {
-              console.log('入库记录已从Firebase实时更新')
-            }).catch(error => {
-              console.error('更新本地入库记录失败:', error)
-            })
-          }
+            }
+            return Promise.resolve()
+          }).then(() => {
+            console.log('入库记录已从Firebase实时更新')
+          }).catch(error => {
+            console.error('更新本地入库记录失败:', error)
+          })
         } catch (error) {
           console.error('处理入库记录变化时出错:', error)
         }
@@ -264,19 +267,20 @@ export class ClothingInventoryDB extends Dexie {
       onValue(ref(firebaseDatabase, 'stockOut'), (snapshot) => {
         try {
           const data = snapshot.val()
-          if (data) {
-            this.stockOut.clear().then(() => {
+          this.stockOut.clear().then(() => {
+            if (data) {
               const promises = []
               for (const key in data) {
                 promises.push(this.stockOut.add(data[key]))
               }
               return Promise.all(promises)
-            }).then(() => {
-              console.log('出库记录已从Firebase实时更新')
-            }).catch(error => {
-              console.error('更新本地出库记录失败:', error)
-            })
-          }
+            }
+            return Promise.resolve()
+          }).then(() => {
+            console.log('出库记录已从Firebase实时更新')
+          }).catch(error => {
+            console.error('更新本地出库记录失败:', error)
+          })
         } catch (error) {
           console.error('处理出库记录变化时出错:', error)
         }
