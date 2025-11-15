@@ -80,6 +80,13 @@ export class ClothingInventoryDB extends Dexie {
       return false
     }
 
+    // 检查用户是否已认证
+    const user = firebaseAuth.currentUser;
+    if (!user) {
+      console.log('用户未认证，无法同步数据到Firebase')
+      return false
+    }
+
     try {
       console.log('开始同步数据到Firebase...')
       
@@ -120,7 +127,11 @@ export class ClothingInventoryDB extends Dexie {
       return true
     } catch (error) {
       console.error('同步到Firebase失败:', error)
-      console.error('错误详情:', error.code, error.message)
+      if (error.code === 'PERMISSION_DENIED') {
+        console.error('权限被拒绝：请检查Firebase实时数据库规则设置是否正确，确保只有认证用户可以访问数据')
+      } else {
+        console.error('错误详情:', error.code, error.message)
+      }
       return false
     }
   }
@@ -129,6 +140,13 @@ export class ClothingInventoryDB extends Dexie {
   async syncFromFirebase() {
     if (!navigator.onLine) {
       console.log('网络未连接，无法从Firebase同步')
+      return false
+    }
+
+    // 检查用户是否已认证
+    const user = firebaseAuth.currentUser;
+    if (!user) {
+      console.log('用户未认证，无法从Firebase同步数据')
       return false
     }
 
@@ -183,6 +201,9 @@ export class ClothingInventoryDB extends Dexie {
       return true
     } catch (error) {
       console.error('从Firebase同步数据失败:', error)
+      if (error.code === 'PERMISSION_DENIED') {
+        console.error('权限被拒绝：请检查Firebase实时数据库规则设置是否正确，确保只有认证用户可以访问数据')
+      }
       return false
     }
   }
@@ -197,6 +218,13 @@ export class ClothingInventoryDB extends Dexie {
     
     if (!navigator.onLine) {
       console.log('网络未连接，无法设置实时监听')
+      return
+    }
+
+    // 检查用户是否已认证
+    const user = firebaseAuth.currentUser;
+    if (!user) {
+      console.log('用户未认证，无法设置Firebase实时监听')
       return
     }
 
@@ -305,10 +333,19 @@ export class ClothingInventoryDB extends Dexie {
 export const db = new ClothingInventoryDB()
 
 // 监听网络状态变化
-window.addEventListener('online', () => {
-  console.log('网络已连接，但需要用户认证后才能同步数据')
-  // 不再自动同步数据，需要用户认证后才能同步
-})
+  window.addEventListener('online', async () => {
+    console.log('网络已连接，正在尝试同步数据...')
+    // 检查用户是否已认证
+    const user = firebaseAuth.currentUser;
+    if (user) {
+      // 用户已认证，执行同步
+      await db.syncFromFirebase()
+      await db.syncToFirebase()
+      db.setupRealtimeListener()
+    } else {
+      console.log('用户未认证，需登录后才能同步数据')
+    }
+  })
 
 window.addEventListener('offline', () => {
   console.log('网络已断开，进入离线模式')
