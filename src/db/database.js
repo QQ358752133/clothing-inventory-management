@@ -1,6 +1,6 @@
 import Dexie from 'dexie'
 // 导入Firebase相关模块
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getDatabase, ref, set, get, onValue, update, remove } from 'firebase/database';
 // 导入Firebase认证模块
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
@@ -28,8 +28,8 @@ console.log('Firebase配置:', {
 console.log('网络状态:', navigator.onLine ? '在线' : '离线');
 console.log('设备信息:', navigator.userAgent);
 
-// 初始化Firebase应用
-const firebaseApp = initializeApp(firebaseConfig);
+// 初始化Firebase应用（避免重复初始化）
+const firebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 console.log('Firebase应用初始化成功:', firebaseApp.name);
 
 // 获取Firebase实时数据库实例

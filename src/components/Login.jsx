@@ -59,7 +59,14 @@ function Login({ onLoginSuccess }) {
   };
 
   // 根据错误代码返回友好的错误消息
-  const getErrorMessage = (errorCode) => {
+  const getErrorMessage = (error) => {
+    // 打印完整错误对象到控制台（用于调试）
+    console.log('完整错误对象:', error);
+    
+    const errorCode = error.code;
+    const errorMessage = error.message;
+    
+    // 针对不同错误代码返回友好消息
     switch (errorCode) {
       case 'auth/invalid-email':
         return '无效的邮箱格式';
@@ -70,13 +77,13 @@ function Login({ onLoginSuccess }) {
       case 'auth/wrong-password':
         return '密码错误';
       case 'auth/network-request-failed':
-        return '网络请求失败，请检查网络连接';
+        return `网络请求失败: ${errorMessage}`;
       case 'auth/too-many-requests':
         return '登录尝试次数过多，请稍后重试';
       case 'auth/invalid-login-credentials':
         return '邮箱或密码错误';
       default:
-        return `登录失败: ${errorCode}`;
+        return `登录失败: ${errorCode} - ${errorMessage}`;
     }
   };
 

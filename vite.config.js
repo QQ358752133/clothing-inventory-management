@@ -92,10 +92,21 @@ export default defineConfig({
           },
           {
             // Firebase API请求，总是走网络
-            urlPattern: /^https:\/\/www\..googleapis\.com\/identitytoolkit\/.*\/verifyPassword/i,
+            urlPattern: /^https:\/\/www\.googleapis\.com\/identitytoolkit\/.*\/verifyPassword/i,
             handler: 'NetworkOnly',
             options: {
               cacheName: 'firebase-auth-verify-cache',
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            // Firebase令牌刷新请求，总是走网络
+            urlPattern: /^https:\/\/securetoken\.googleapis\.com\/.*/i,
+            handler: 'NetworkOnly',
+            options: {
+              cacheName: 'firebase-token-cache',
               cacheableResponse: {
                 statuses: [0, 200]
               }
