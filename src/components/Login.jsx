@@ -48,7 +48,7 @@ function Login({ onLoginSuccess }) {
       };
       console.log('详细错误信息:', errorDetails);
       
-      setError(getErrorMessage(error.code));
+      setError(getErrorMessage(error));
       // 在开发环境下显示详细错误信息
       if (process.env.NODE_ENV === 'development') {
         setDebugInfo(JSON.stringify(errorDetails, null, 2));
