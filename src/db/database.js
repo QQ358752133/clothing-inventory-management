@@ -333,8 +333,9 @@ export class ClothingInventoryDB extends Dexie {
 export const db = new ClothingInventoryDB()
 
 // 监听网络状态变化
-  window.addEventListener('online', async () => {
-    console.log('网络已连接，正在尝试同步数据...')
+window.addEventListener('online', async () => {
+  console.log('网络已连接，正在尝试同步数据...')
+  try {
     // 检查用户是否已认证
     const user = firebaseAuth.currentUser;
     if (user) {
@@ -345,7 +346,10 @@ export const db = new ClothingInventoryDB()
     } else {
       console.log('用户未认证，需登录后才能同步数据')
     }
-  })
+  } catch (error) {
+    console.error('处理网络恢复事件时出错:', error)
+  }
+})
 
 window.addEventListener('offline', () => {
   console.log('网络已断开，进入离线模式')
