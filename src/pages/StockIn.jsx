@@ -329,6 +329,15 @@ const StockIn = ({ refreshStats }) => {
       setCustomColorInput('')
       setQuantityMatrix({})
       
+      // 立即同步到Firebase
+      if (navigator.onLine) {
+        await db.syncToFirebase().then(success => {
+          if (success) {
+            console.log('入库数据已同步到Firebase')
+          }
+        })
+      }
+      
       setAlertMessage('服装批量添加并入库成功！')
       setAlertType('success')
       playSuccessSound() // 播放成功提示音

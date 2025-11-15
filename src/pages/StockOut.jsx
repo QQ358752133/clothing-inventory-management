@@ -241,6 +241,15 @@ const StockOut = ({ refreshStats }) => {
         notes: ''
       })
       
+      // 立即同步到Firebase
+      if (navigator.onLine) {
+        await db.syncToFirebase().then(success => {
+          if (success) {
+            console.log('出库数据已同步到Firebase')
+          }
+        })
+      }
+      
       setAlertMessage(`出库操作成功完成！销售总额：¥${calculateTotalAmount().toFixed(2)}`)
       setAlertType('success')
       playSuccessSound() // 播放成功提示音
