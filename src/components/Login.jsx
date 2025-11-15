@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { firebaseAuth, signInWithEmailAndPassword } from '../db/database';
 
 function Login({ onLoginSuccess }) {
@@ -7,6 +7,42 @@ function Login({ onLoginSuccess }) {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [debugInfo, setDebugInfo] = useState('');
+  const [swStatus, setSwStatus] = useState('未知');
+  const [networkDetails, setNetworkDetails] = useState({});
+  
+  // 检查Service Worker状态
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready
+        .then(registration => {
+          setSwStatus('已注册并激活');
+          console.log('Service Worker已注册:', registration);
+        })
+        .catch(err => {
+          setSwStatus(`注册失败: ${err.message}`);
+          console.log('Service Worker注册失败:', err);
+        });
+    } else {
+      setSwStatus('不支持');
+    }
+    
+    // 检查网络详细信息
+    checkNetworkDetails();
+  }, []);
+  
+  // 检查网络详细信息
+  const checkNetworkDetails = () => {
+    const details = {
+      online: navigator.onLine,
+      connectionType: navigator.connection?.type || '未知',
+      effectiveType: navigator.connection?.effectiveType || '未知',
+      rtt: navigator.connection?.rtt || '未知',
+      downlink: navigator.connection?.downlink || '未知',
+      hasServiceWorker: 'serviceWorker' in navigator
+    };
+    setNetworkDetails(details);
+    console.log('网络详细信息:', details);
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -15,11 +51,54 @@ function Login({ onLoginSuccess }) {
     setDebugInfo('');
 
     try {
+      // 在开发环境中，尝试禁用Service Worker以隔离问题
+      let serviceWorkerStatus = 'not-available';
+      if (process.env.NODE_ENV === 'development' && 'serviceWorker' in navigator) {
+        console.log('开发环境：检查Service Worker状态...');
+        
+        // 检查是否有活动的Service Worker
+        if (navigator.serviceWorker.controller) {
+          console.log('发现活动的Service Worker，尝试禁用...');
+          serviceWorkerStatus = 'controller-present';
+          
+          // 注销所有Service Worker注册
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          for (const registration of registrations) {
+            await registration.unregister();
+            console.log('Service Worker已注销:', registration);
+          }
+          serviceWorkerStatus = 'unregistered';
+        } else {
+          serviceWorkerStatus = 'no-controller';
+        }
+      }
+
+      // 在开发环境中，尝试强制重新获取网络状态
+      if (process.env.NODE_ENV === 'development') {
+        console.log('开发环境：强制检查网络状态...');
+        
+        // 尝试从一个可靠的服务器获取数据来验证网络连接
+        let networkTestResult = 'not-tested';
+        try {
+          const testResponse = await fetch('https://www.google.com/generate_204', { 
+            method: 'HEAD',
+            cache: 'no-cache',
+            mode: 'no-cors'
+          });
+          networkTestResult = testResponse.type === 'opaque' ? 'connected' : 'error';
+          console.log('网络测试响应:', testResponse.type, networkTestResult);
+        } catch (testError) {
+          networkTestResult = 'failed';
+          console.log('网络测试失败:', testError);
+        }
+      }
+
       // 添加调试信息
       const debugData = {
         timestamp: new Date().toISOString(),
         deviceInfo: navigator.userAgent,
         networkOnline: navigator.onLine,
+        serviceWorkerStatus: serviceWorkerStatus,
         email: email,
         passwordLength: password.length
       };
@@ -27,8 +106,13 @@ function Login({ onLoginSuccess }) {
       console.log('登录请求信息:', debugData);
       setDebugInfo(JSON.stringify(debugData, null, 2));
       
-      // 登录Firebase
-      const userCredential = await signInWithEmailAndPassword(firebaseAuth, email, password);
+      // 登录Firebase - 添加超时处理
+      const userCredential = await Promise.race([
+        signInWithEmailAndPassword(firebaseAuth, email, password),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('登录请求超时')), 30000)
+        )
+      ]);
       console.log('登录成功:', userCredential.user);
       
       // 登录成功后调用回调函数
