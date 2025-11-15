@@ -7,13 +7,13 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      includeAssets: ['pwa-192x192.svg', 'pwa-512x512.svg', '蝴蝶结.svg', 'favicon.ico'],
       manifest: {
         name: '服装出入库管理系统',
         short_name: '服装管理',
         description: '服装店出入库管理系统 - 平板优化版本',
-        theme_color: '#ffffff',
-        background_color: '#ffffff',
+        theme_color: '#2196F3',
+        background_color: '#2196F3',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
@@ -22,12 +22,8 @@ export default defineConfig({
           {
             src: 'pwa-192x192.svg',
             sizes: '192x192',
-            type: 'image/svg+xml'
-          },
-          {
-            src: 'pwa-512x512.svg',
-            sizes: '512x512',
-            type: 'image/svg+xml'
+            type: 'image/svg+xml',
+            purpose: 'any maskable'
           },
           {
             src: 'pwa-512x512.svg',
@@ -38,7 +34,7 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,mp3}'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -55,15 +51,29 @@ export default defineConfig({
             }
           },
           {
-            urlPattern: /api\/.*/i,
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 一年
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            urlPattern: /^https:\/\/fuzhuang-705a0-default-rtdb\.asia-southeast1\.firebasedatabase\.app\/.*/i,
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'api-cache',
-              networkTimeoutSeconds: 3,
+              cacheName: 'firebase-database-cache',
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 // 24小时
+                maxAgeSeconds: 60 * 60 * 24 // 一天
               },
+              networkTimeoutSeconds: 10,
               cacheableResponse: {
                 statuses: [0, 200]
               }

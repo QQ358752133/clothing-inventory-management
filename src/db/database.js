@@ -340,14 +340,24 @@ window.addEventListener('online', async () => {
     const user = firebaseAuth.currentUser;
     if (user) {
       // 用户已认证，执行同步
+      console.log('用户已认证，开始同步数据...')
       await db.syncFromFirebase()
       await db.syncToFirebase()
-      db.setupRealtimeListener()
+      if (!db.realtimeListenersSet) {
+        db.setupRealtimeListener()
+      }
     } else {
       console.log('用户未认证，需登录后才能同步数据')
     }
   } catch (error) {
     console.error('处理网络恢复事件时出错:', error)
+    // 更详细的错误信息
+    if (error.code) {
+      console.error('错误代码:', error.code)
+    }
+    if (error.message) {
+      console.error('错误消息:', error.message)
+    }
   }
 })
 
