@@ -6,13 +6,27 @@ function Login({ onLoginSuccess }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [debugInfo, setDebugInfo] = useState('');
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
+    setDebugInfo('');
 
     try {
+      // 添加调试信息
+      const debugData = {
+        timestamp: new Date().toISOString(),
+        deviceInfo: navigator.userAgent,
+        networkOnline: navigator.onLine,
+        email: email,
+        passwordLength: password.length
+      };
+      
+      console.log('登录请求信息:', debugData);
+      setDebugInfo(JSON.stringify(debugData, null, 2));
+      
       // 登录Firebase
       const userCredential = await signInWithEmailAndPassword(firebaseAuth, email, password);
       console.log('登录成功:', userCredential.user);
@@ -23,7 +37,22 @@ function Login({ onLoginSuccess }) {
       }
     } catch (error) {
       console.error('登录失败:', error);
+      console.error('错误代码:', error.code);
+      console.error('错误消息:', error.message);
+      
+      // 保存详细错误信息用于调试
+      const errorDetails = {
+        code: error.code,
+        message: error.message,
+        timestamp: new Date().toISOString()
+      };
+      console.log('详细错误信息:', errorDetails);
+      
       setError(getErrorMessage(error.code));
+      // 在开发环境下显示详细错误信息
+      if (process.env.NODE_ENV === 'development') {
+        setDebugInfo(JSON.stringify(errorDetails, null, 2));
+      }
     } finally {
       setIsLoading(false);
     }
@@ -37,10 +66,17 @@ function Login({ onLoginSuccess }) {
       case 'auth/user-disabled':
         return '该账户已被禁用';
       case 'auth/user-not-found':
+        return '邮箱不存在';
       case 'auth/wrong-password':
+        return '密码错误';
+      case 'auth/network-request-failed':
+        return '网络请求失败，请检查网络连接';
+      case 'auth/too-many-requests':
+        return '登录尝试次数过多，请稍后重试';
+      case 'auth/invalid-login-credentials':
         return '邮箱或密码错误';
       default:
-        return '登录失败，请稍后重试';
+        return `登录失败: ${errorCode}`;
     }
   };
 
@@ -52,6 +88,14 @@ function Login({ onLoginSuccess }) {
         
         {error && <div className="login-error">{error}</div>}
         
+        {/* 调试信息显示 */}
+        {debugInfo && (
+          <div className="debug-info">
+            <h4>调试信息</h4>
+            <pre>{debugInfo}</pre>
+          </div>
+        )}
+        
         <form onSubmit={handleLogin}>
           <div className="form-group">
             <label htmlFor="email">邮箱</label>
@@ -62,6 +106,7 @@ function Login({ onLoginSuccess }) {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="请输入管理员邮箱"
+              autoComplete="email"
             />
           </div>
           
@@ -74,6 +119,7 @@ function Login({ onLoginSuccess }) {
               onChange={(e) => setPassword(e.target.value)}
               required
               placeholder="请输入密码"
+              autoComplete="current-password"
             />
           </div>
           
@@ -129,6 +175,29 @@ function Login({ onLoginSuccess }) {
           margin-bottom: 20px;
           text-align: center;
           font-size: 14px;
+        }
+        
+        .debug-info {
+          background-color: #f0f0f0;
+          padding: 12px;
+          border-radius: 8px;
+          margin-bottom: 20px;
+          font-size: 12px;
+          overflow: auto;
+          max-height: 200px;
+        }
+        
+        .debug-info h4 {
+          margin: 0 0 8px 0;
+          color: #666;
+          font-size: 14px;
+        }
+        
+        .debug-info pre {
+          margin: 0;
+          white-space: pre-wrap;
+          word-break: break-word;
+          color: #333;
         }
         
         .form-group {

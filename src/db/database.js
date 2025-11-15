@@ -17,14 +17,41 @@ const firebaseConfig = {
   measurementId: "G-CBBQH3406Y"
 };
 
+// 添加初始化调试信息
+console.log('Firebase配置:', {
+  apiKey: firebaseConfig.apiKey.substring(0, 10) + '...',
+  authDomain: firebaseConfig.authDomain,
+  databaseURL: firebaseConfig.databaseURL,
+  projectId: firebaseConfig.projectId
+});
+
+console.log('网络状态:', navigator.onLine ? '在线' : '离线');
+console.log('设备信息:', navigator.userAgent);
+
 // 初始化Firebase应用
 const firebaseApp = initializeApp(firebaseConfig);
+console.log('Firebase应用初始化成功:', firebaseApp.name);
 
 // 获取Firebase实时数据库实例
 const firebaseDatabase = getDatabase(firebaseApp);
+console.log('Firebase数据库实例获取成功');
 
 // 获取Firebase认证实例
 const firebaseAuth = getAuth(firebaseApp);
+console.log('Firebase认证实例获取成功');
+
+// 监控认证实例状态
+console.log('Firebase认证域名:', firebaseAuth.app.options.authDomain);
+
+// 监听全局认证状态变化（用于调试）
+onAuthStateChanged(firebaseAuth, (user) => {
+  console.log('全局认证状态变化:', user ? {
+    uid: user.uid,
+    email: user.email,
+    emailVerified: user.emailVerified,
+    displayName: user.displayName
+  } : '未登录');
+});
 
 export { firebaseAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged };
 
