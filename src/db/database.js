@@ -2,6 +2,8 @@ import Dexie from 'dexie'
 // 导入Firebase相关模块
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, set, get, onValue, update, remove } from 'firebase/database';
+// 导入Firebase认证模块
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 
 // Firebase配置（已更新为您的项目配置）
 const firebaseConfig = {
@@ -20,6 +22,11 @@ const firebaseApp = initializeApp(firebaseConfig);
 
 // 获取Firebase实时数据库实例
 const firebaseDatabase = getDatabase(firebaseApp);
+
+// 获取Firebase认证实例
+const firebaseAuth = getAuth(firebaseApp);
+
+export { firebaseAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged };
 
 export class ClothingInventoryDB extends Dexie {
   constructor() {
@@ -298,18 +305,9 @@ export class ClothingInventoryDB extends Dexie {
 export const db = new ClothingInventoryDB()
 
 // 监听网络状态变化
-window.addEventListener('online', async () => {
-  console.log('网络已连接，可以同步数据')
-  try {
-    // 网络恢复时重置监听标记
-    db.realtimeListenersSet = false;
-    // 网络恢复时自动同步数据
-    await db.syncFromFirebase();
-    await db.syncToFirebase();
-    db.setupRealtimeListener();
-  } catch (error) {
-    console.error('网络恢复时数据同步失败:', error);
-  }
+window.addEventListener('online', () => {
+  console.log('网络已连接，但需要用户认证后才能同步数据')
+  // 不再自动同步数据，需要用户认证后才能同步
 })
 
 window.addEventListener('offline', () => {
@@ -319,21 +317,9 @@ window.addEventListener('offline', () => {
 })
 
 // 应用初始化时执行的操作
-async function initializeAppData() {
-  if (navigator.onLine) {
-    try {
-      // 先从Firebase同步初始数据
-      await db.syncFromFirebase();
-      // 然后设置实时监听
-      db.setupRealtimeListener();
-    } catch (error) {
-      console.error('应用初始化数据同步失败:', error);
-      // 即使初始同步失败，也尝试设置实时监听
-      db.setupRealtimeListener();
-    }
-  } else {
-    console.log('应用启动时网络离线，将在网络连接后自动同步数据');
-  }
+function initializeAppData() {
+  // 不再自动同步数据，需要用户认证后才能同步
+  console.log('应用初始化完成，等待用户认证...');
 }
 
 // 初始化应用数据
