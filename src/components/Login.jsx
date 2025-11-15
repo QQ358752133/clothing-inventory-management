@@ -37,6 +37,8 @@ function Login({ onLoginSuccess }) {
       }
     } catch (error) {
       console.error('登录失败:', error);
+      console.error('错误类型:', typeof error);
+      console.error('错误toString():', error.toString());
       console.error('错误代码:', error.code);
       console.error('错误消息:', error.message);
       
@@ -44,7 +46,10 @@ function Login({ onLoginSuccess }) {
       const errorDetails = {
         code: error.code,
         message: error.message,
-        timestamp: new Date().toISOString()
+        stack: error.stack,
+        timestamp: new Date().toISOString(),
+        errorObjectKeys: Object.keys(error),
+        errorToString: error.toString()
       };
       console.log('详细错误信息:', errorDetails);
       
@@ -63,8 +68,25 @@ function Login({ onLoginSuccess }) {
     // 打印完整错误对象到控制台（用于调试）
     console.log('完整错误对象:', error);
     
-    const errorCode = error.code;
-    const errorMessage = error.message;
+    // 增加防御性编程，确保即使error对象没有某些属性也能正常工作
+    let errorCode = error.code;
+    let errorMessage = error.message;
+    
+    // 如果error是字符串，直接返回
+    if (typeof error === 'string') {
+      return `登录失败: ${error}`;
+    }
+    
+    // 如果error对象没有code或message属性，尝试从其他属性获取信息
+    if (!errorCode) {
+      // 尝试从error对象的其他属性获取错误代码
+      errorCode = error.error?.code || error.name || 'unknown-error';
+    }
+    
+    if (!errorMessage) {
+      // 尝试从error对象的其他属性获取错误消息
+      errorMessage = error.error?.message || error.toString() || '未知错误';
+    }
     
     // 针对不同错误代码返回友好消息
     switch (errorCode) {
