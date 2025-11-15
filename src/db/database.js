@@ -76,44 +76,35 @@ export class ClothingInventoryDB extends Dexie {
     try {
       console.log('开始同步数据到Firebase...')
       
-      // 检查本地数据数量
-      const clothesCount = await this.clothes.count()
-      const inventoryCount = await this.inventory.count()
-      const stockInCount = await this.stockIn.count()
-      const stockOutCount = await this.stockOut.count()
+      // 定义需要同步的表
+      const tables = ['clothes', 'inventory', 'stockIn', 'stockOut']
       
-      console.log(`本地数据数量: 服装${clothesCount}, 库存${inventoryCount}, 入库${stockInCount}, 出库${stockOutCount}`)
-      
-      // 同步服装数据
-      const clothes = await this.clothes.toArray()
-      console.log('开始同步服装数据...', clothes.length)
-      for (const item of clothes) {
-        console.log(`同步服装: ${item.id} - ${item.name}`)
-        await set(ref(firebaseDatabase, `clothes/${item.id}`), item)
-      }
-
-      // 同步库存数据
-      const inventory = await this.inventory.toArray()
-      console.log('开始同步库存数据...', inventory.length)
-      for (const item of inventory) {
-        console.log(`同步库存: ${item.id} - 服装ID: ${item.clothingId}, 数量: ${item.quantity}`)
-        await set(ref(firebaseDatabase, `inventory/${item.id}`), item)
-      }
-
-      // 同步入库记录
-      const stockIn = await this.stockIn.toArray()
-      console.log('开始同步入库记录...', stockIn.length)
-      for (const item of stockIn) {
-        console.log(`同步入库: ${item.id} - 服装ID: ${item.clothingId}, 数量: ${item.quantity}`)
-        await set(ref(firebaseDatabase, `stockIn/${item.id}`), item)
-      }
-
-      // 同步出库记录
-      const stockOut = await this.stockOut.toArray()
-      console.log('开始同步出库记录...', stockOut.length)
-      for (const item of stockOut) {
-        console.log(`同步出库: ${item.id} - 服装ID: ${item.clothingId}, 数量: ${item.quantity}`)
-        await set(ref(firebaseDatabase, `stockOut/${item.id}`), item)
+      for (const table of tables) {
+        // 获取本地数据
+        const localData = await this[table].toArray()
+        const localIds = new Set(localData.map(item => item.id))
+        
+        console.log(`开始同步${table}数据...本地数量: ${localData.length}`)
+        
+        // 获取Firebase中的数据
+        const tableRef = ref(firebaseDatabase, table)
+        const snapshot = await get(tableRef)
+        const firebaseData = snapshot.val() || {}
+        
+        // 同步本地数据到Firebase
+        for (const item of localData) {
+          console.log(`同步${table}: ${item.id}`)
+          await set(ref(firebaseDatabase, `${table}/${item.id}`), item)
+        }
+        
+        // 删除Firebase中存在但本地不存在的记录
+        for (const key in firebaseData) {
+          const firebaseId = parseInt(key)
+          if (!localIds.has(firebaseId)) {
+            console.log(`从Firebase删除${table}中不存在于本地的记录: ${firebaseId}`)
+            await remove(ref(firebaseDatabase, `${table}/${firebaseId}`))
+          }
+        }
       }
 
       // 标记同步完成
