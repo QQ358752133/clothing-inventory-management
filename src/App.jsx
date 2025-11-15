@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import Header from './components/Header'
 import Navigation from './components/Navigation'
 import Dashboard from './pages/Dashboard'
@@ -26,10 +26,14 @@ function ScrollToTop() {
   return null;
 }
 
-function App() {
+// 主应用组件
+function AppContent() {
   // 用户认证状态
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  
+  // 导航钩子
+  const navigate = useNavigate();
   
   // 调试用户状态变化
   useEffect(() => {
@@ -115,7 +119,7 @@ function App() {
     loadInventoryStats()
   }
 
-  // 路由保护组件
+  // 路由保护组件 - 保护需要认证的页面
   const ProtectedRoute = ({ children }) => {
     console.log('ProtectedRoute检查:', { loading, user });
     if (loading) {
@@ -134,15 +138,32 @@ function App() {
     return user ? children : <Navigate to="/login" replace />;
   };
 
+  // 登录页面保护 - 已认证用户不能访问登录页面
+  const LoginPageProtection = ({ children }) => {
+    console.log('LoginPageProtection检查:', { loading, user });
+    if (loading) {
+      return (
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '100vh' 
+        }}>
+          <div style={{ fontSize: '24px' }}>加载中...</div>
+        </div>
+      );
+    }
+    // 已认证用户重定向到首页
+    return user ? <Navigate to="/" replace /> : children;
+  };
+
   return (
-    <Router>
-      <ScrollToTop />
-      <Routes>
-        {/* 登录页面 - 无需认证 */}
-        <Route 
-          path="/login" 
-          element={<Login onLoginSuccess={() => console.log('登录成功')} />} 
-        />
+    <Routes>
+      {/* 登录页面 - 无需认证，但已认证用户不能访问 */}
+      <Route 
+        path="/login" 
+        element={<LoginPageProtection><Login onLoginSuccess={() => navigate('/')} /></LoginPageProtection>} 
+      />
         
         {/* 受保护的路由 */}
         <Route 
@@ -333,8 +354,17 @@ function App() {
           } 
         />
       </Routes>
-    </Router>
   )
+}
+
+// 应用组件 - 包含Router
+function App() {
+  return (
+    <Router>
+      <ScrollToTop />
+      <AppContent />
+    </Router>
+  );
 }
 
 export default App
