@@ -209,37 +209,15 @@ const DataViewer = () => {
     try {
       setIsDeleting(true)
       
-      console.log(`开始删除${selectedTable}表中的记录，共${selectedRecords.length}条`)
-      
       for (const recordId of selectedRecords) {
-        // 从本地数据库删除记录
-        console.log(`从本地数据库删除${selectedTable}记录: ${recordId}`)
         await db[selectedTable].delete(recordId)
-        console.log(`本地数据库删除${selectedTable}记录${recordId}成功`)
       }
 
+      // 重新加载数据
+      loadRecords()
       // 清空选中状态
       setSelectedRecords([])
       setSelectAll(false)
-      
-      // 如果在线，先手动触发同步以确保Firebase数据也被删除
-      if (navigator.onLine) {
-        console.log('网络在线，开始同步删除操作到Firebase...')
-        const syncResult = await db.syncToFirebase()
-        if (syncResult) {
-          console.log('删除操作已成功同步到Firebase')
-        } else {
-          console.error('同步删除操作到Firebase失败')
-        }
-      } else {
-        // 标记为离线更改，以便网络恢复后同步
-        console.log('网络离线，标记为离线更改，将在网络恢复后同步删除操作')
-        db.markOfflineChange()
-      }
-      
-      // 重新加载数据
-      console.log('删除操作完成，重新加载数据...')
-      loadRecords()
       
       setAlertMessage('删除成功')
       setAlertType('success')

@@ -7,13 +7,13 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['pwa-192x192.svg', 'pwa-512x512.svg', '蝴蝶结.svg', 'favicon.ico'],
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
         name: '服装出入库管理系统',
         short_name: '服装管理',
         description: '服装店出入库管理系统 - 平板优化版本',
-        theme_color: '#2196F3',
-        background_color: '#2196F3',
+        theme_color: '#ffffff',
+        background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
@@ -22,8 +22,12 @@ export default defineConfig({
           {
             src: 'pwa-192x192.svg',
             sizes: '192x192',
-            type: 'image/svg+xml',
-            purpose: 'any maskable'
+            type: 'image/svg+xml'
+          },
+          {
+            src: 'pwa-512x512.svg',
+            sizes: '512x512',
+            type: 'image/svg+xml'
           },
           {
             src: 'pwa-512x512.svg',
@@ -34,7 +38,7 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,mp3}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -51,73 +55,15 @@ export default defineConfig({
             }
           },
           {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 一年
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          {
-            urlPattern: /^https:\/\/fuzhuang-705a0-default-rtdb\.asia-southeast1\.firebasedatabase\.app\/.*/i,
+            urlPattern: /api\/.*/i,
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'firebase-database-cache',
+              cacheName: 'api-cache',
+              networkTimeoutSeconds: 3,
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 // 一天
+                maxAgeSeconds: 60 * 60 * 24 // 24小时
               },
-              networkTimeoutSeconds: 10,
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          {
-            // Firebase认证请求，总是走网络
-            urlPattern: /^https:\/\/identitytoolkit\.googleapis\.com\/.*/i,
-            handler: 'NetworkOnly',
-            options: {
-              cacheName: 'firebase-auth-cache',
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          {
-            // Firebase API请求，总是走网络
-            urlPattern: /^https:\/\/www\.googleapis\.com\/identitytoolkit\/.*\/verifyPassword/i,
-            handler: 'NetworkOnly',
-            options: {
-              cacheName: 'firebase-auth-verify-cache',
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          {
-            // 所有Firebase相关请求，总是走网络
-            urlPattern: /^https:\/\/(.*\.googleapis\.com|firebasestorage\.googleapis\.com)\/.*/i,
-            handler: 'NetworkOnly',
-            options: {
-              cacheName: 'firebase-all-requests-cache',
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          {
-            // Firebase令牌刷新请求，总是走网络
-            urlPattern: /^https:\/\/securetoken\.googleapis\.com\/.*/i,
-            handler: 'NetworkOnly',
-            options: {
-              cacheName: 'firebase-token-cache',
               cacheableResponse: {
                 statuses: [0, 200]
               }
