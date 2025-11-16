@@ -102,6 +102,17 @@ export default defineConfig({
             }
           },
           {
+            // 所有Firebase相关请求，总是走网络
+            urlPattern: /^https:\/\/(.*\.googleapis\.com|firebasestorage\.googleapis\.com)\/.*/i,
+            handler: 'NetworkOnly',
+            options: {
+              cacheName: 'firebase-all-requests-cache',
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
             // Firebase令牌刷新请求，总是走网络
             urlPattern: /^https:\/\/securetoken\.googleapis\.com\/.*/i,
             handler: 'NetworkOnly',
