@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['蝴蝶结.svg', 'pwa-192x192.svg', 'pwa-512x512.svg', 'pwa-192x192.png', 'pwa-512x512.png'],
+      includeAssets: ['女装.svg', '蝴蝶结.svg', 'pwa-192x192.svg', 'pwa-512x512.svg'],
       manifest: {
         name: '服装出入库管理系统',
         short_name: '服装管理',
@@ -23,37 +23,13 @@ export default defineConfig({
         dir: 'ltr',
         icons: [
           {
-            src: '/蝴蝶结.svg',
+            src: '/女装.svg',
             sizes: '192x192',
             type: 'image/svg+xml',
             purpose: 'any maskable'
           },
           {
-            src: '/蝴蝶结.svg',
-            sizes: '512x512',
-            type: 'image/svg+xml',
-            purpose: 'any maskable'
-          },
-          {
-            src: '/pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'any maskable'
-          },
-          {
-            src: '/pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any maskable'
-          },
-          {
-            src: '/pwa-192x192.svg',
-            sizes: '192x192',
-            type: 'image/svg+xml',
-            purpose: 'any maskable'
-          },
-          {
-            src: '/pwa-512x512.svg',
+            src: '/女装.svg',
             sizes: '512x512',
             type: 'image/svg+xml',
             purpose: 'any maskable'
