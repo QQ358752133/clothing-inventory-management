@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { firebaseAuth, signInWithEmailAndPassword } from '../db/database';
+import { getAuth } from 'firebase/auth';
 
 function Login({ onLoginSuccess }) {
   const [email, setEmail] = useState('');
@@ -9,6 +10,7 @@ function Login({ onLoginSuccess }) {
   const [debugInfo, setDebugInfo] = useState('');
   const [swStatus, setSwStatus] = useState('未知');
   const [networkDetails, setNetworkDetails] = useState({});
+  const [firebaseAuthTestResult, setFirebaseAuthTestResult] = useState(null);
   
   // 检查Service Worker状态
   useEffect(() => {
@@ -42,6 +44,93 @@ function Login({ onLoginSuccess }) {
     };
     setNetworkDetails(details);
     console.log('网络详细信息:', details);
+  };
+
+  // 测试Firebase认证URL的连接
+  const testFirebaseAuthUrl = async () => {
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      console.log('开始测试Firebase认证URL...');
+      
+      // 直接测试Firebase认证API的连接性
+      const authUrl = 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyAexzhaDNB6VjSk7RJk1jWHyIs8BOqKkvI';
+      
+      // 使用HEAD请求测试连接，不发送实际登录数据
+      const response = await fetch(authUrl, {
+        method: 'HEAD',
+        cache: 'no-cache',
+        mode: 'no-cors'
+      });
+      
+      const result = {
+        success: response.type === 'opaque', // no-cors模式下会返回opaque响应
+        status: response.type,
+        timestamp: new Date().toISOString()
+      };
+      
+      setFirebaseAuthTestResult(result);
+      console.log('Firebase认证URL测试结果:', result);
+      
+      // 同时测试DNS解析
+      try {
+        const dnsTest = await fetch('https://dns.google/resolve?name=identitytoolkit.googleapis.com', {
+          method: 'GET',
+          cache: 'no-cache'
+        });
+        const dnsData = await dnsTest.json();
+        console.log('DNS解析结果:', dnsData);
+        result.dnsSuccess = true;
+        result.dnsData = dnsData;
+      } catch (dnsError) {
+        console.log('DNS解析测试失败:', dnsError);
+        result.dnsSuccess = false;
+        result.dnsError = dnsError.message;
+      }
+      
+      setFirebaseAuthTestResult({ ...result });
+      
+    } catch (error) {
+      console.error('Firebase认证URL测试失败:', error);
+      const errorResult = {
+        success: false,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      };
+      setFirebaseAuthTestResult(errorResult);
+      setError(`Firebase连接测试失败: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 清除浏览器缓存和Storage
+  const clearBrowserCache = async () => {
+    try {
+      // 清除Service Worker缓存
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        for (const cacheName of cacheNames) {
+          await caches.delete(cacheName);
+        }
+        console.log('浏览器缓存已清除');
+      }
+      
+      // 清除localStorage
+      localStorage.clear();
+      console.log('localStorage已清除');
+      
+      // 清除sessionStorage
+      sessionStorage.clear();
+      console.log('sessionStorage已清除');
+      
+      // 提示用户刷新页面
+      alert('缓存已清除，请刷新页面后重试登录');
+    } catch (error) {
+      console.error('清除缓存失败:', error);
+      alert(`清除缓存失败: ${error.message}`);
+    }
   };
 
   const handleLogin = async (e) => {
@@ -133,8 +222,42 @@ function Login({ onLoginSuccess }) {
         stack: error.stack,
         timestamp: new Date().toISOString(),
         errorObjectKeys: Object.keys(error),
-        errorToString: error.toString()
+        errorToString: error.toString(),
+        networkDetails: networkDetails,
+        serviceWorkerStatus: swStatus
       };
+      
+      // 如果是网络请求失败，自动测试Firebase认证URL
+      if (error.code === 'auth/network-request-failed') {
+        console.log('检测到网络请求失败，自动测试Firebase认证URL...');
+        
+        // 异步测试Firebase认证URL，不阻塞错误处理
+        (async () => {
+          const authUrl = 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyAexzhaDNB6VjSk7RJk1jWHyIs8BOqKkvI';
+          try {
+            const response = await fetch(authUrl, {
+              method: 'HEAD',
+              cache: 'no-cache',
+              mode: 'no-cors'
+            });
+            errorDetails.firebaseAuthTest = {
+              success: response.type === 'opaque',
+              status: response.type
+            };
+            console.log('Firebase认证URL测试结果:', errorDetails.firebaseAuthTest);
+          } catch (testError) {
+            errorDetails.firebaseAuthTest = {
+              success: false,
+              error: testError.message
+            };
+            console.log('Firebase认证URL测试失败:', testError);
+          }
+          
+          // 更新调试信息，包含Firebase认证测试结果
+          setDebugInfo(JSON.stringify(errorDetails, null, 2));
+        })();
+      }
+      
       console.log('详细错误信息:', errorDetails);
       
       setError(getErrorMessage(error));
@@ -208,6 +331,47 @@ function Login({ onLoginSuccess }) {
             <pre>{debugInfo}</pre>
           </div>
         )}
+
+        {/* 网络诊断工具 */}
+        <div className="diagnostic-tools">
+          <h4>网络诊断</h4>
+          <div className="diagnostic-buttons">
+            <button 
+              type="button" 
+              className="diagnostic-button"
+              onClick={testFirebaseAuthUrl}
+              disabled={isLoading}
+            >
+              测试Firebase连接
+            </button>
+            <button 
+              type="button" 
+              className="diagnostic-button"
+              onClick={clearBrowserCache}
+            >
+              清除缓存和数据
+            </button>
+          </div>
+          
+          {/* Firebase认证测试结果 */}
+          {firebaseAuthTestResult && (
+            <div className={`diagnostic-result ${firebaseAuthTestResult.success ? 'success' : 'error'}`}>
+              <h5>Firebase连接测试结果</h5>
+              <pre>{JSON.stringify(firebaseAuthTestResult, null, 2)}</pre>
+            </div>
+          )}
+          
+          {/* 网络状态信息 */}
+          <div className="network-status">
+            <h5>网络状态</h5>
+            <p>在线状态: {networkDetails.online ? '在线' : '离线'}</p>
+            <p>连接类型: {networkDetails.connectionType}</p>
+            <p>有效类型: {networkDetails.effectiveType}</p>
+            <p>延迟: {networkDetails.rtt}ms</p>
+            <p>下行速度: {networkDetails.downlink}Mbps</p>
+            <p>Service Worker: {swStatus}</p>
+          </div>
+        </div>
         
         <form onSubmit={handleLogin}>
           <div className="form-group">
@@ -361,6 +525,91 @@ function Login({ onLoginSuccess }) {
         .login-button:disabled {
           opacity: 0.6;
           cursor: not-allowed;
+        }
+        
+        /* 网络诊断工具样式 */
+        .diagnostic-tools {
+          background-color: #f8f9fa;
+          border-radius: 8px;
+          padding: 16px;
+          margin-bottom: 20px;
+          border: 1px solid #e9ecef;
+        }
+        
+        .diagnostic-tools h4 {
+          margin: 0 0 12px 0;
+          color: #495057;
+          font-size: 16px;
+        }
+        
+        .diagnostic-tools h5 {
+          margin: 12px 0 8px 0;
+          color: #6c757d;
+          font-size: 14px;
+        }
+        
+        .diagnostic-buttons {
+          display: flex;
+          gap: 8px;
+          margin-bottom: 12px;
+        }
+        
+        .diagnostic-button {
+          padding: 8px 12px;
+          background: #6c757d;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          font-size: 12px;
+          cursor: pointer;
+          transition: background-color 0.3s;
+          flex: 1;
+        }
+        
+        .diagnostic-button:hover:not(:disabled) {
+          background: #5a6268;
+        }
+        
+        .diagnostic-button:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+        
+        .diagnostic-result {
+          background-color: white;
+          padding: 8px;
+          border-radius: 4px;
+          margin-top: 8px;
+          font-size: 12px;
+          overflow: auto;
+          max-height: 150px;
+        }
+        
+        .diagnostic-result.success {
+          border-left: 3px solid #28a745;
+        }
+        
+        .diagnostic-result.error {
+          border-left: 3px solid #dc3545;
+        }
+        
+        .diagnostic-result pre {
+          margin: 0;
+          white-space: pre-wrap;
+          word-break: break-word;
+        }
+        
+        .network-status {
+          background-color: white;
+          padding: 12px;
+          border-radius: 4px;
+          margin-top: 12px;
+        }
+        
+        .network-status p {
+          margin: 4px 0;
+          font-size: 12px;
+          color: #495057;
         }
       `}</style>
     </div>
