@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      includeAssets: ['蝴蝶结.svg', 'pwa-192x192.svg', 'pwa-512x512.svg'],
       manifest: {
         name: '服装出入库管理系统',
         short_name: '服装管理',
@@ -20,17 +20,17 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: 'pwa-192x192.svg',
+            src: '蝴蝶结.svg',
             sizes: '192x192',
             type: 'image/svg+xml'
           },
           {
-            src: 'pwa-512x512.svg',
+            src: '蝴蝶结.svg',
             sizes: '512x512',
             type: 'image/svg+xml'
           },
           {
-            src: 'pwa-512x512.svg',
+            src: '蝴蝶结.svg',
             sizes: '512x512',
             type: 'image/svg+xml',
             purpose: 'any maskable'
