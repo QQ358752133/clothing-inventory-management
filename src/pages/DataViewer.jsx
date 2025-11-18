@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { Database, RefreshCw, Download } from 'lucide-react'
 import { db } from '../db/database'
-import { useMediaQuery } from '../hooks/useMediaQuery'
 import Alert from '../components/Alert'
 
 // 查看更多按钮组件
@@ -23,27 +22,38 @@ const ViewMoreButton = ({ record, table }) => {
       <button 
         onClick={() => setExpanded(!expanded)}
         style={{
-          marginTop: '8px',
-          padding: '6px 12px',
-          backgroundColor: '#f0f0f0',
-          border: 'none',
-          borderRadius: '4px',
-          fontSize: '16px',
+          marginTop: '12px',
+          padding: '8px 16px',
+          backgroundColor: '#f8f9fa',
+          border: '1px solid #e9ecef',
+          borderRadius: '8px',
+          fontSize: '14px',
           cursor: 'pointer',
-          color: '#666'
+          color: '#495057',
+          fontWeight: '500',
+          transition: 'all 0.2s ease'
         }}
+        onMouseEnter={(e) => e.target.style.backgroundColor = '#e9ecef'}
+        onMouseLeave={(e) => e.target.style.backgroundColor = '#f8f9fa'}
+        onTouchStart={(e) => e.target.style.backgroundColor = '#e9ecef'}
+        onTouchEnd={(e) => e.target.style.backgroundColor = '#f8f9fa'}
       >
         {expanded ? '收起详情' : '查看更多'}
       </button>
       
       {expanded && (
-        <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #f0f0f0' }}>
+        <div style={{ 
+          marginTop: '12px', 
+          paddingTop: '12px', 
+          borderTop: '1px solid #e9ecef',
+          animation: 'slideDown 0.3s ease'
+        }}>
           {additionalFields.map((field) => (
-            <div key={field} style={{ marginBottom: '4px', display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontWeight: '600', color: '#888', fontSize: '14px', marginBottom: '2px' }}>
+            <div key={field} style={{ marginBottom: '8px', display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontWeight: '600', color: '#6c757d', fontSize: '12px', marginBottom: '3px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                 {formatHeader(field)}
               </span>
-              <span style={{ wordBreak: 'break-word', fontSize: '16px', color: '#666' }}>
+              <span style={{ wordBreak: 'break-word', fontSize: '14px', color: '#495057' }}>
                 {formatValue(record[field], field)}
               </span>
             </div>
@@ -71,7 +81,6 @@ const DataViewer = () => {
   const [loading, setLoading] = useState(false)
   const [selectedRecords, setSelectedRecords] = useState([]) // 选中的记录ID数组
   const [selectAll, setSelectAll] = useState(false) // 全选状态
-  const isMobile = useMediaQuery('(max-width: 768px)')
   const [isDeleting, setIsDeleting] = useState(false) // 删除按钮加载状态
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [alertMessage, setAlertMessage] = useState('')
@@ -229,27 +238,80 @@ const DataViewer = () => {
   }
 
   return (
-    <div className="container" style={{ padding: '10px' }}>
+    <div className="container" style={{ 
+      padding: '16px',
+      backgroundColor: '#f8f9fa',
+      minHeight: '100vh'
+    }}>
+      {/* 添加CSS动画 */}
+      <style jsx>{`
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+      `}</style>
+      
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        justifyContent: isMobile ? 'center' : 'space-between',
-        marginBottom: '16px',
+        justifyContent: 'center',
+        marginBottom: '24px',
         flexWrap: 'wrap',
-        gap: '10px',
-        textAlign: 'center'
+        gap: '16px',
+        textAlign: 'center',
+        animation: 'fadeIn 0.5s ease'
       }}>
-        <h1 className="text-xl font-semibold" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Database size={24} />
+        <h1 className="text-xl font-semibold" style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '10px',
+          fontSize: '24px',
+          color: '#212529',
+          fontWeight: '700'
+        }}>
+          <Database size={28} />
           数据查看器
         </h1>
         
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+        <div style={{ 
+          display: 'flex', 
+          gap: '12px', 
+          alignItems: 'center', 
+          flexWrap: 'wrap', 
+          justifyContent: 'center',
+          width: '100%'
+        }}>
           <select 
             value={selectedTable}
             onChange={(e) => setSelectedTable(e.target.value)}
             className="form-input"
-            style={{ minWidth: '120px', width: isMobile ? '100%' : 'auto' }}
+            style={{ 
+              minWidth: '100%', 
+              width: '100%',
+              padding: '14px 16px',
+              borderRadius: '8px',
+              border: '1px solid #ced4da',
+              fontSize: '18px',
+              backgroundColor: '#ffffff',
+              color: '#495057',
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+              transition: 'all 0.2s ease'
+            }}
           >
             <option value="stockIn">入库记录</option>
             <option value="stockOut">出库记录</option>
@@ -262,25 +324,54 @@ const DataViewer = () => {
             disabled={loading}
             className="btn"
             style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                gap: '4px',
-                padding: '6px 10px',
-                fontSize: isMobile ? '14px' : '16px'
-              }}
-            >
-            <RefreshCw size={16} />
-            刷新
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              gap: '6px',
+              padding: '14px 20px',
+              fontSize: '18px',
+              borderRadius: '8px',
+              backgroundColor: '#2196F3',
+              color: '#ffffff',
+              border: 'none',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.7 : 1,
+              boxShadow: '0 4px 8px rgba(33,150,243,0.3)',
+              transition: 'all 0.2s ease',
+              minHeight: '50px'
+            }}
+            onTouchStart={(e) => !loading && (e.target.style.transform = 'scale(0.98)')}
+            onTouchEnd={(e) => !loading && (e.target.style.transform = 'scale(1)')}
+          >
+            <RefreshCw size={'20px'} />
+            {loading ? '刷新中...' : '刷新'}
           </button>
           
           <button 
             onClick={exportToJson}
             disabled={records.length === 0}
             className="btn"
-            style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              gap: '6px',
+              padding: '14px 20px',
+              fontSize: '18px',
+              borderRadius: '8px',
+              backgroundColor: '#4CAF50',
+              color: '#ffffff',
+              border: 'none',
+              cursor: records.length === 0 ? 'not-allowed' : 'pointer',
+              opacity: records.length === 0 ? 0.7 : 1,
+              boxShadow: '0 4px 8px rgba(76,175,80,0.3)',
+              transition: 'all 0.2s ease',
+              minHeight: '50px'
+            }}
+            onTouchStart={(e) => records.length > 0 && (e.target.style.transform = 'scale(0.98)')}
+            onTouchEnd={(e) => records.length > 0 && (e.target.style.transform = 'scale(1)')}
           >
-            <Download size={16} />
+            <Download size={'20px'} />
             导出JSON
           </button>
         </div>
@@ -288,37 +379,15 @@ const DataViewer = () => {
 
       <div className="card" style={{ marginBottom: '24px' }}>
 
-        {/* 桌面端删除按钮 - 只在有选择时显示 */}
-        {!isMobile && selectedRecords.length > 0 && (
-          <div style={{ marginBottom: '16px' }}>
-            <button
-              onClick={handleOpenConfirmDialog}
-              disabled={isDeleting}
-              className="btn"
-              style={{
-                backgroundColor: '#f44336',
-                color: 'white',
-                border: 'none',
-                padding: '8px 16px',
-                borderRadius: '4px',
-                cursor: isDeleting ? 'not-allowed' : 'pointer',
-                fontSize: '14px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-            >
-              {isDeleting ? '删除中...' : `删除选中 (${selectedRecords.length})`}
-            </button>
-          </div>
-        )}
+        {/* 移动端删除按钮和全选按钮已在卡片列表上方显示 */}
         
         <div style={{ 
           maxHeight: '70vh', 
           overflowY: 'auto',
           border: '1px solid #e0e0e0',
           borderRadius: '4px',
-          fontSize: isMobile ? '14px' : '16px'
+          fontSize: '14px',
+          backgroundColor: '#f8f9fa'
         }}>
           {loading ? (
             <div style={{ 
@@ -337,166 +406,197 @@ const DataViewer = () => {
               暂无记录
             </div>
           ) : (
-            isMobile ? (
                 // 移动设备：卡片式布局
-                <div style={{ padding: '8px' }}>
-                  {/* 移动端删除按钮 */}
-                  {selectedRecords.length > 0 && (
-                    <div style={{ marginBottom: '16px', padding: '8px', backgroundColor: '#fff3f3', borderRadius: '4px' }}>
-                      <button
-                        onClick={handleOpenConfirmDialog}
-                        disabled={isDeleting}
-                        style={{
-                          backgroundColor: '#f44336',
-                          color: 'white',
-                          border: 'none',
-                          padding: '8px 16px',
-                          borderRadius: '4px',
-                          cursor: isDeleting ? 'not-allowed' : 'pointer',
-                          fontSize: '14px',
-                          width: '100%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '4px'
-                        }}
-                      >
-                        {isDeleting ? '删除中...' : `删除选中 (${selectedRecords.length})`}
-                      </button>
-                    </div>
-                  )}
-                  
-                  {/* 移动端全选按钮 */}
+                <div style={{ padding: '16px' }}>
+                  {/* 移动端操作栏 */}
                   {filteredRecords.length > 0 && (
-                    <div style={{ marginBottom: '12px', padding: '8px', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                        <input
-                          type="checkbox"
-                          checked={selectAll}
-                          onChange={handleSelectAll}
-                          style={{ marginRight: '8px', cursor: 'pointer' }}
-                        />
-                        <span style={{ fontSize: '16px', color: '#666' }}>全选</span>
-                      </label>
-                    </div>
-                  )}
-                  
-                  {filteredRecords.map((record, recordIndex) => (
-                    <div 
-                      key={recordIndex} 
-                      style={{ 
-                        border: '1px solid #e0e0e0',
+                    <div style={{ 
+                      marginBottom: '20px', 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      gap: '12px'
+                    }}>
+                      {/* 移动端全选按钮 */}
+                      <div style={{ 
+                        padding: '12px', 
+                        backgroundColor: '#ffffff', 
                         borderRadius: '8px',
-                        padding: '12px',
-                        marginBottom: '12px',
-                        backgroundColor: '#fff',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
-                      }}
-                    >
-                      {/* 复选框，为所有表格添加 */}
-                      <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                        border: '1px solid #e9ecef'
+                      }}>
+                        <label style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          cursor: 'pointer',
+                          userSelect: 'none'
+                        }}>
                           <input
                             type="checkbox"
-                            checked={selectedRecords.includes(record.id)}
-                            onChange={() => handleRecordSelect(record.id)}
-                            style={{ marginRight: '8px', cursor: 'pointer' }}
+                            checked={selectAll}
+                            onChange={handleSelectAll}
+                            style={{ 
+                              marginRight: '12px', 
+                              cursor: 'pointer',
+                              width: '20px',
+                              height: '20px',
+                              accentColor: '#2196F3'
+                            }}
                           />
-                          <span style={{ fontSize: '16px', color: '#666' }}>选择</span>
+                          <span style={{ fontSize: '16px', color: '#495057', fontWeight: '500' }}>全选</span>
                         </label>
                       </div>
-                      
-                      {/* 简化显示，只显示最重要的字段 */}
-                      {getImportantFields(selectedTable).map((field) => (
-                        <div key={field} style={{ marginBottom: '6px', display: 'flex', flexDirection: 'column' }}>
-                          <span style={{ fontWeight: '600', color: '#666', fontSize: '14px', marginBottom: '2px' }}>
-                            {formatHeader(field)}
-                          </span>
-                          <span style={{ wordBreak: 'break-word', fontSize: '16px' }}>
-                            {formatValue(record[field], field)}
-                          </span>
+                       
+                      {/* 移动端删除按钮 */}
+                      {selectedRecords.length > 0 && (
+                        <div style={{ 
+                          padding: '12px', 
+                          backgroundColor: '#ffebee', 
+                          borderRadius: '8px',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                          border: '1px solid #ffcdd2'
+                        }}>
+                          <button
+                            onClick={handleOpenConfirmDialog}
+                            disabled={isDeleting}
+                            style={{
+                              backgroundColor: '#ef5350',
+                              color: 'white',
+                              border: 'none',
+                              padding: '12px 20px',
+                              borderRadius: '8px',
+                              cursor: isDeleting ? 'not-allowed' : 'pointer',
+                              fontSize: '16px',
+                              fontWeight: '600',
+                              width: '100%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '8px',
+                              transition: 'all 0.2s ease',
+                              minHeight: '48px'
+                            }}
+                            onTouchStart={(e) => !isDeleting && (e.target.style.transform = 'scale(0.98)')}
+                            onTouchEnd={(e) => !isDeleting && (e.target.style.transform = 'scale(1)')}
+                          >
+                            {isDeleting ? '删除中...' : `删除选中 (${selectedRecords.length})`}
+                          </button>
                         </div>
-                      ))}
-                      
-                      {/* 添加查看更多按钮 */}
-                      <ViewMoreButton record={record} table={selectedTable} />
+                      )}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                // 桌面设备：表格布局
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ 
-                      backgroundColor: '#f5f5f5', 
-                      position: 'sticky',
-                      top: 0
-                    }}>
-                      {/* 复选框列，为所有表格添加 */}
-                      <th key="checkbox" style={{
-                        padding: '12px',
-                        textAlign: 'center',
-                        borderBottom: '1px solid #e0e0e0',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        width: '40px'
-                      }}>
-                        <input
-                          type="checkbox"
-                          checked={selectAll}
-                          onChange={handleSelectAll}
-                          style={{ cursor: 'pointer' }}
-                        />
-                      </th>
-                      {getTableHeaders().map((header, index) => (
-                        <th key={index} style={{
-                          padding: '12px',
-                          textAlign: 'left',
-                          borderBottom: '1px solid #e0e0e0',
-                          fontSize: '16px',
-                          fontWeight: '600'
-                        }}>
-                          {formatHeader(header)}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
+                  )}
+                  
+                  {/* 卡片列表 */}
+                  <div style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: '16px'
+                  }}>
                     {filteredRecords.map((record, recordIndex) => (
-                      <tr key={recordIndex} style={{
-                        borderBottom: '1px solid #f0f0f0',
-                        backgroundColor: recordIndex % 2 === 0 ? '#fff' : '#fafafa'
-                      }}>
-                        {/* 复选框列，为所有表格添加 */}
-                        <td key="checkbox" style={{
-                          padding: '12px',
-                          textAlign: 'center',
-                          fontSize: '14px',
-                          whiteSpace: 'pre-wrap',
-                          wordBreak: 'break-word'
+                      <div 
+                        key={recordIndex} 
+                        style={{ 
+                          border: '1px solid #e9ecef',
+                          borderRadius: '12px',
+                          padding: '16px',
+                          backgroundColor: '#ffffff',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
+                          transition: 'all 0.3s ease',
+                          transform: 'translateZ(0)',
+                          overflow: 'hidden'
+                        }}
+                        onTouchStart={(e) => (e.currentTarget.style.transform = 'translateY(2px)')}
+                        onTouchEnd={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
+                      >
+                        {/* 复选框区域 */}
+                        <div style={{ 
+                          marginBottom: '16px', 
+                          display: 'flex', 
+                          alignItems: 'center',
+                          justifyContent: 'space-between'
                         }}>
-                          <input
-                            type="checkbox"
-                            checked={selectedRecords.includes(record.id)}
-                            onChange={() => handleRecordSelect(record.id)}
-                            style={{ cursor: 'pointer' }}
-                          />
-                        </td>
-                        {getTableHeaders().map((header, index) => (
-                        <td key={index} style={{
-                          padding: '12px',
-                          fontSize: '16px',
-                          whiteSpace: 'pre-wrap',
-                          wordBreak: 'break-word'
+                          <label style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            cursor: 'pointer',
+                            userSelect: 'none' 
+                          }}>
+                            <input
+                              type="checkbox"
+                              checked={selectedRecords.includes(record.id)}
+                              onChange={() => handleRecordSelect(record.id)}
+                              style={{ 
+                                marginRight: '10px', 
+                                cursor: 'pointer',
+                                width: '20px',
+                                height: '20px',
+                                accentColor: '#2196F3'
+                              }}
+                            />
+                            <span style={{ fontSize: '14px', color: '#6c757d', fontWeight: '500' }}>选择记录</span>
+                          </label>
+                          
+                          {/* 记录状态标识 */}
+                          <div style={{
+                            padding: '4px 12px',
+                            borderRadius: '12px',
+                            backgroundColor: '#e3f2fd',
+                            color: '#1976d2',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px'
+                          }}>
+                            {selectedTable === 'stockIn' ? '入库' : 
+                             selectedTable === 'stockOut' ? '出库' : 
+                             selectedTable === 'clothes' ? '服装' : '库存'}
+                          </div>
+                        </div>
+                        
+                        {/* 主要字段信息 */}
+                        <div style={{ 
+                          marginBottom: '16px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '12px'
                         }}>
-                          {formatValue(record[header], header)}
-                        </td>
-                      ))}
-                      </tr>
+                          {getImportantFields(selectedTable).map((field) => (
+                            <div key={field} style={{ 
+                              display: 'flex', 
+                              flexDirection: 'column',
+                              gap: '4px'
+                            }}>
+                              <span style={{ 
+                                fontWeight: '600', 
+                                color: '#6c757d', 
+                                fontSize: '14px',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.5px'
+                              }}>
+                                {formatHeader(field)}
+                              </span>
+                              <span style={{ 
+                                wordBreak: 'break-word', 
+                                fontSize: '16px',
+                                color: '#212529',
+                                fontWeight: field === 'id' || field === 'quantity' ? 'bold' : 'normal'
+                              }}>
+                                {formatValue(record[field], field)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                        
+                        {/* 查看更多按钮 */}
+                        <div style={{ 
+                          borderTop: '1px solid #f0f0f0', 
+                          paddingTop: '16px' 
+                        }}>
+                          <ViewMoreButton record={record} table={selectedTable} />
+                        </div>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
-              )
+                  </div>
+                </div>
             )}
         </div>
 
@@ -533,12 +633,12 @@ const DataViewer = () => {
             borderRadius: '12px',
             padding: '24px',
             maxWidth: '90%',
-            width: isMobile ? '90%' : '400px',
+            width: '90%',
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)'
           }}>
             <h3 style={{
               margin: '0 0 16px 0',
-              fontSize: isMobile ? '18px' : '20px',
+              fontSize: '18px',
               fontWeight: 'bold',
               color: '#333'
             }}>
@@ -546,7 +646,7 @@ const DataViewer = () => {
             </h3>
             <p style={{
               margin: '0 0 24px 0',
-              fontSize: isMobile ? '14px' : '16px',
+              fontSize: '14px',
               color: '#666',
               lineHeight: '1.5'
             }}>
@@ -564,12 +664,12 @@ const DataViewer = () => {
               <button
                 onClick={handleCloseConfirmDialog}
                 style={{
-                  padding: isMobile ? '14px 24px' : '10px 20px',
+                  padding: '14px 24px',
                   borderRadius: '8px',
                   border: '1px solid #ddd',
                   backgroundColor: 'white',
                   color: '#2196F3',
-                  fontSize: isMobile ? '18px' : '16px',
+                  fontSize: '18px',
                   fontWeight: 'bold',
                   cursor: 'pointer',
                   flex: 1,
@@ -582,12 +682,12 @@ const DataViewer = () => {
                 onClick={handleDeleteSelected}
                 disabled={isDeleting}
                 style={{
-                  padding: isMobile ? '14px 24px' : '10px 20px',
+                  padding: '14px 24px',
                   borderRadius: '8px',
                   border: 'none',
                   backgroundColor: '#4CAF50',
                   color: 'white',
-                  fontSize: isMobile ? '18px' : '16px',
+                  fontSize: '18px',
                   fontWeight: 'bold',
                   cursor: isDeleting ? 'not-allowed' : 'pointer',
                   opacity: isDeleting ? 0.7 : 1,

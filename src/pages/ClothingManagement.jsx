@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Edit, Trash2, Shirt, Plus, ChevronDown, ChevronUp } from 'lucide-react'
 import { db } from '../db/database'
-import { useMediaQuery } from '../hooks/useMediaQuery'
 import Alert from '../components/Alert'
 
 const ClothingManagement = ({ refreshStats }) => {
@@ -25,22 +24,9 @@ const ClothingManagement = ({ refreshStats }) => {
   })
   const [customColor, setCustomColor] = useState('')
   const [categoryCustom, setCategoryCustom] = useState('')
-  
-  // 使用媒体查询检测移动设备
-  const isMobile = useMediaQuery('(max-width: 768px)')
-  const [isTablet, setIsTablet] = useState(false)
 
   useEffect(() => {
     loadClothes()
-    
-    // 检测是否为平板设备
-    const checkTablet = () => {
-      setIsTablet(window.innerWidth > 768 && window.innerWidth <= 1024)
-    }
-    
-    checkTablet()
-    window.addEventListener('resize', checkTablet)
-    return () => window.removeEventListener('resize', checkTablet)
   }, [])
 
   const loadClothes = async () => {
@@ -258,9 +244,20 @@ const ClothingManagement = ({ refreshStats }) => {
           <Shirt size={24} />
           服装管理
         </h1>
-        
-
-
+        <button
+          onClick={() => setShowAddForm(true)}
+          className="px-6 py-3 border border-transparent rounded-md shadow-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          style={{ 
+            fontSize: '16px',
+            minHeight: '50px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          <Plus size={20} />
+          添加商品
+        </button>
       </div>
 
       {/* 编辑表单 */}
@@ -290,7 +287,7 @@ const ClothingManagement = ({ refreshStats }) => {
           <form onSubmit={handleSubmit}>
             <div style={{ 
               display: 'grid', 
-              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))', 
+              gridTemplateColumns: '1fr', 
               gap: '16px',
               marginBottom: '20px'
             }}>
@@ -508,7 +505,7 @@ const ClothingManagement = ({ refreshStats }) => {
                 onClick={handleCancel}
                 className="px-6 py-3 border border-gray-300 rounded-md shadow-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
                 style={{ 
-                  fontSize: isMobile ? '16px' : '14px',
+                  fontSize: '16px',
                   minHeight: '50px',
                   minWidth: '100px'
                 }}
@@ -520,7 +517,7 @@ const ClothingManagement = ({ refreshStats }) => {
                 disabled={isLoading}
                 className="px-6 py-3 border border-transparent rounded-md shadow-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 style={{ 
-                  fontSize: isMobile ? '16px' : '14px',
+                  fontSize: '16px',
                   minHeight: '50px',
                   minWidth: '100px'
                 }}
@@ -534,241 +531,131 @@ const ClothingManagement = ({ refreshStats }) => {
 
       {/* 数据表格 */}
       <div className="card" style={{ overflowX: 'auto' }}>
-        {isMobile ? (
-          /* 移动设备卡片视图 */
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {filteredClothes.map((clothing) => {
-              // 获取第一个库存记录（假设一个商品只有一个库存记录）
-              const inventory = clothing.inventory && clothing.inventory.length > 0 ? clothing.inventory[0] : { quantity: 0 }
-              const isExpanded = expandedCards[clothing.id] || false
-              
-              return (
+        {/* 移动设备卡片视图 */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {filteredClothes.map((clothing) => {
+            // 获取第一个库存记录（假设一个商品只有一个库存记录）
+            const inventory = clothing.inventory && clothing.inventory.length > 0 ? clothing.inventory[0] : { quantity: 0 }
+            const isExpanded = expandedCards[clothing.id] || false
+            
+            return (
+              <div 
+                key={clothing.id} 
+                className="border border-gray-200 rounded-lg overflow-hidden"
+                style={{ backgroundColor: '#fff' }}
+              >
+                {/* 卡片头部 */}
                 <div 
-                  key={clothing.id} 
-                  className="border border-gray-200 rounded-lg overflow-hidden"
-                  style={{ backgroundColor: '#fff' }}
+                  style={{ 
+                    padding: '12px 16px', 
+                    borderBottom: '1px solid #e9ecef', 
+                    backgroundColor: '#f8f9fa',
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center'
+                  }}
+                  onClick={() => toggleCard(clothing.id)}
                 >
-                  {/* 卡片头部 */}
-                  <div 
-                    style={{ 
-                      padding: '12px 16px', 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center',
-                      cursor: 'pointer',
-                      backgroundColor: '#f9fafb',
-                      borderBottom: '1px solid #e5e7eb'
-                    }}
-                    onClick={() => toggleCard(clothing.id)}
-                  >
-                    <div>
-                      <h3 style={{ fontWeight: '600', marginBottom: '4px' }}>{clothing.name}</h3>
-                      <p style={{ fontSize: '12px', color: '#6b7280' }}>{clothing.code}</p>
+                  <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#212529', margin: 0 }}>
+                    {clothing.name}
+                  </h3>
+                  <span style={{ fontSize: '14px', color: '#6c757d' }}>
+                    {clothing.code}
+                  </span>
+                </div>
+                
+                {/* 卡片内容 */}
+                {isExpanded && (
+                  <div style={{ padding: '16px' }}>
+                    <div style={{ marginBottom: '12px' }}>
+                      <span style={{ fontWeight: '600', color: '#495057' }}>分类：</span>
+                      <span style={{ color: '#212529', fontSize: '16px' }}>{clothing.category}</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ 
-                        fontSize: '12px', 
-                        backgroundColor: inventory.quantity <= 0 ? '#ef4444' : '#10b981', 
-                        color: '#fff', 
-                        padding: '2px 6px', 
-                        borderRadius: '10px'
-                      }}>
-                        {inventory.quantity}
-                      </span>
-                      {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                    
+                    <div style={{ marginBottom: '12px' }}>
+                      <span style={{ fontWeight: '600', color: '#495057' }}>尺寸：</span>
+                      <span style={{ color: '#212529', fontSize: '16px' }}>{clothing.size}</span>
+                    </div>
+                    
+                    <div style={{ marginBottom: '12px' }}>
+                      <span style={{ fontWeight: '600', color: '#495057' }}>颜色：</span>
+                      <span style={{ color: '#212529', fontSize: '16px' }}>{clothing.color}</span>
+                    </div>
+                    
+                    <div style={{ marginBottom: '12px' }}>
+                      <span style={{ fontWeight: '600', color: '#495057' }}>库存：</span>
+                      <span style={{ color: '#212529', fontSize: '16px' }}>{inventory.quantity}</span>
+                    </div>
+                    
+                    {clothing.image && (
+                      <div style={{ marginBottom: '16px' }}>
+                        <span style={{ fontWeight: '600', color: '#495057' }}>图片：</span>
+                        <div style={{ marginTop: '8px' }}>
+                          <img 
+                            src={clothing.image} 
+                            alt={clothing.name} 
+                            style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', borderRadius: '4px', border: '1px solid #e9ecef' }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* 操作按钮 */}
+                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '16px' }}>
+                      {/* 编辑按钮 */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleEdit(clothing)
+                        }}
+                        style={{
+                          padding: '8px 16px',
+                          backgroundColor: '#ffc107',
+                          color: '#212529',
+                          border: 'none',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '16px',
+                          fontWeight: '500',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                      >
+                        <span style={{ marginRight: '4px' }}>编辑</span>
+                      </button>
+                      
+                      {/* 删除按钮 */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDelete(clothing.id)
+                        }}
+                        style={{
+                          padding: '8px 16px',
+                          backgroundColor: '#dc3545',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '16px',
+                          fontWeight: '500',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                      >
+                        <span style={{ marginRight: '4px' }}>删除</span>
+                      </button>
                     </div>
                   </div>
-                  
-                  {/* 卡片内容 */}
-                  {isExpanded && (
-                    <div style={{ padding: '16px' }}>
-                      <div style={{ marginBottom: '16px' }}>
-                        <p style={{ fontSize: isMobile ? '16px' : '14px', color: '#6b7280', marginBottom: '8px' }}>
-                          <strong>分类:</strong> {clothing.category}
-                        </p>
-                        <p style={{ fontSize: isMobile ? '16px' : '14px', color: '#6b7280', marginBottom: '8px' }}>
-                          <strong>尺寸:</strong> {clothing.size}
-                        </p>
-                        <p style={{ fontSize: isMobile ? '16px' : '14px', color: '#6b7280', marginBottom: '8px' }}>
-                          <strong>颜色:</strong> {clothing.color}
-                        </p>
-                        {clothing.purchasePrice > 0 && (
-                          <p style={{ fontSize: isMobile ? '16px' : '14px', color: '#6b7280', marginBottom: '8px' }}>
-                            <strong>采购价:</strong> ¥{clothing.purchasePrice.toFixed(2)}
-                          </p>
-                        )}
-                        {clothing.sellingPrice > 0 && (
-                          <p style={{ fontSize: isMobile ? '16px' : '14px', color: '#6b7280', marginBottom: '8px' }}>
-                            <strong>销售价:</strong> ¥{clothing.sellingPrice.toFixed(2)}
-                          </p>
-                        )}
-                        <p style={{ fontSize: isMobile ? '16px' : '14px', color: '#6b7280' }}>
-                          <strong>库存:</strong> {inventory.quantity}
-                        </p>
-                      </div>
-                       
-                      {/* 操作按钮 */}
-                      <div style={{ 
-                        display: 'flex', 
-                        justifyContent: 'flex-end', 
-                        gap: '8px',
-                        paddingTop: '12px',
-                        borderTop: '1px solid #e5e7eb'
-                      }}>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleEdit(clothing)
-                          }}
-                          className="px-6 py-3 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                          style={{ 
-                            fontSize: isMobile ? '16px' : '14px',
-                            minHeight: '50px',
-                            minWidth: '100px'
-                          }}
-                        >
-                          <Edit size={isMobile ? '20' : '16'} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '4px' }} />
-                          编辑
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleDelete(clothing.id)
-                          }}
-                          className="px-6 py-3 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                          style={{ 
-                            fontSize: isMobile ? '16px' : '14px',
-                            minHeight: '50px',
-                            minWidth: '100px'
-                          }}
-                        >
-                          <Trash2 size={isMobile ? '20' : '16'} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '4px' }} />
-                          删除
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        ) : (
-          /* 桌面设备表格视图 */
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  商品编码
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  商品名称
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  分类
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  尺寸
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  颜色
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  采购价
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  销售价
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  库存
-                </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  操作
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredClothes.map((clothing) => {
-                // 获取第一个库存记录（假设一个商品只有一个库存记录）
-                const inventory = clothing.inventory && clothing.inventory.length > 0 ? clothing.inventory[0] : { quantity: 0 }
-                
-                return (
-                  <tr key={clothing.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {clothing.code}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {clothing.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {clothing.category}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {clothing.size}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {clothing.color}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ¥{clothing.purchasePrice ? clothing.purchasePrice.toFixed(2) : '0.00'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ¥{clothing.sellingPrice ? clothing.sellingPrice.toFixed(2) : '0.00'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span style={{ 
-                        padding: '2px 6px', 
-                        borderRadius: '10px', 
-                        fontSize: '12px',
-                        backgroundColor: inventory.quantity <= 0 ? '#ef4444' : '#10b981',
-                        color: '#fff'
-                      }}>
-                        {inventory.quantity}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                        <button
-                          onClick={() => handleEdit(clothing)}
-                          className="text-blue-600 hover:text-blue-900 focus:outline-none"
-                          style={{ 
-                            padding: '8px 12px',
-                            borderRadius: '6px',
-                            transition: 'background-color 0.2s',
-                            minHeight: '40px',
-                            minWidth: '70px',
-                            fontSize: '14px'
-                          }}
-                          onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(37, 99, 235, 0.1)'}
-                          onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
-                        >
-                          <Edit size={16} />
-                          {isTablet ? '编辑' : ''}
-                        </button>
-                        <button
-                          onClick={() => handleDelete(clothing.id)}
-                          className="text-red-600 hover:text-red-900 focus:outline-none"
-                          style={{ 
-                            padding: '8px 12px',
-                            borderRadius: '6px',
-                            transition: 'background-color 0.2s',
-                            minHeight: '40px',
-                            minWidth: '70px',
-                            fontSize: '14px'
-                          }}
-                          onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'}
-                          onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
-                        >
-                          <Trash2 size={16} />
-                          {isTablet ? '删除' : ''}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        )}
+                )}
+              </div>
+            )
+          })}
+        </div>
       </div>
 
       {/* 显示添加按钮（仅当表单未显示时） */}

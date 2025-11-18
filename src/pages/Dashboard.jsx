@@ -1,11 +1,10 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useMediaQuery } from '../hooks/useMediaQuery'
 
 const Dashboard = () => {
   const navigate = useNavigate()
-  // 检测移动设备
-  const isMobile = useMediaQuery('(max-width: 768px)')
+  // 系统仅在手机上使用，固定为移动端
+  const isMobile = true
   
   // 刷新数据函数（保留按钮功能）
   const refreshStats = () => {
@@ -100,11 +99,7 @@ const Dashboard = () => {
           <Zap size={20} />
           快速操作
         </h2>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(180px, 1fr))',
-          gap: isMobile ? '16px' : '12px'
-        }}>
+        <div style={{          display: 'grid',          gridTemplateColumns: 'repeat(2, 1fr)',          gap: '16px'        }}>
           {quickActions.map((action, index) => {
             const IconComponent = action.icon
             return (
@@ -115,11 +110,11 @@ const Dashboard = () => {
                   background: 'white',
                   border: `2px solid ${action.color}20`,
                   borderRadius: '12px',
-                  padding: isMobile ? '20px' : '16px',
+                  padding: '20px',
                   textAlign: 'left',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
-                  minHeight: isMobile ? '100px' : '90px',
+                  minHeight: '100px',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '12px'
@@ -140,21 +135,21 @@ const Dashboard = () => {
                 }}>
                   <div style={{
                     background: `${action.color}20`,
-                    borderRadius: isMobile ? '10px' : '8px',
-                    padding: isMobile ? '10px' : '8px',
+                    borderRadius: '10px',
+                    padding: '10px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     marginTop: '2px' // 微调图标位置，与文字顶部对齐
                   }}>
-                    <IconComponent size={isMobile ? '24' : '20'} color={action.color} />
+                    <IconComponent size={'24'} color={action.color} />
                   </div>
                   <span style={{
-                    fontSize: isMobile ? '18px' : '16px',
+                    fontSize: '18px',
                     fontWeight: 'bold',
                     color: action.color,
                     // 控制四个字标题的换行显示
-                    width: action.title.length === 4 ? (isMobile ? '45px' : '40px') : 'auto',
+                    width: action.title.length === 4 ? '45px' : 'auto',
                     wordBreak: 'break-word',
                     lineHeight: '1.2'
                   }}>
