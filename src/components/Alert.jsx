@@ -56,20 +56,20 @@ const Alert = ({ message, type = 'success', onClose, autoClose = true }) => {
   return (
     <div style={{
       position: 'fixed',
-      top: '15px',
+      top: '50%',
       left: '50%',
-      transform: 'translateX(-50%)',
+      transform: 'translate(-50%, -50%)',
       backgroundColor: getTypeStyles().backgroundColor,
       color: 'white',
-      padding: '12px 20px',
-      borderRadius: '8px',
-      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+      padding: '20px 32px',
+      borderRadius: '12px',
+      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)',
       zIndex: 9999,
-      maxWidth: '90%',
+      maxWidth: '80%',
       width: 'auto',
       textAlign: 'center',
-      fontSize: '14px',
-      fontWeight: '500',
+      fontSize: '18px',
+      fontWeight: '600',
       // 使用简单的CSS过渡效果
       transition: 'opacity 0.3s ease-out'
     }}

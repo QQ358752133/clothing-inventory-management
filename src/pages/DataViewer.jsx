@@ -288,30 +288,31 @@ const DataViewer = () => {
 
       <div className="card" style={{ marginBottom: '24px' }}>
 
+        {/* 桌面端删除按钮 - 只在有选择时显示 */}
+        {!isMobile && selectedRecords.length > 0 && (
+          <div style={{ marginBottom: '16px' }}>
+            <button
+              onClick={handleOpenConfirmDialog}
+              disabled={isDeleting}
+              className="btn"
+              style={{
+                backgroundColor: '#f44336',
+                color: 'white',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '4px',
+                cursor: isDeleting ? 'not-allowed' : 'pointer',
+                fontSize: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              {isDeleting ? '删除中...' : `删除选中 (${selectedRecords.length})`}
+            </button>
+          </div>
+        )}
         
-        {/* 删除按钮，在所有表格中显示 */}
-        <div style={{ marginBottom: '16px' }}>
-          <button
-            onClick={handleOpenConfirmDialog}
-            disabled={selectedRecords.length === 0 || isDeleting}
-            className="btn"
-            style={{
-              backgroundColor: '#f44336',
-              color: 'white',
-              border: 'none',
-              padding: '8px 16px',
-              borderRadius: '4px',
-              cursor: selectedRecords.length === 0 || isDeleting ? 'not-allowed' : 'pointer',
-              fontSize: '14px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}
-          >
-            {isDeleting ? '删除中...' : `删除选中 (${selectedRecords.length})`}
-          </button>
-        </div>
-
         <div style={{ 
           maxHeight: '70vh', 
           overflowY: 'auto',
