@@ -382,8 +382,6 @@ const DataViewer = () => {
         {/* 移动端删除按钮和全选按钮已在卡片列表上方显示 */}
         
         <div style={{ 
-          maxHeight: '70vh', 
-          overflowY: 'auto',
           border: '1px solid #e0e0e0',
           borderRadius: '4px',
           fontSize: '14px',
