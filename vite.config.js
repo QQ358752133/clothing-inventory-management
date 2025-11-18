@@ -9,9 +9,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['女装.svg', '女装.png', '蝴蝶结.svg', 'pwa-192x192.svg', 'pwa-512x512.svg'],
       manifest: {
-        name: '服装出入库管理系统',
-        short_name: '服装管理',
-        description: '服装店出入库管理系统 - 平板优化版本',
+        name: '符小姐女装管理系统',
+        short_name: '符小姐女装',
+        description: '符小姐女装 - 出入库管理系统（平板优化版本）',
         theme_color: '#2196F3',
         background_color: '#2196F3',
         display: 'standalone',
