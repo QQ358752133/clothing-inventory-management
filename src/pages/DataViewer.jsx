@@ -28,7 +28,7 @@ const ViewMoreButton = ({ record, table }) => {
           backgroundColor: '#f0f0f0',
           border: 'none',
           borderRadius: '4px',
-          fontSize: '11px',
+          fontSize: '14px',
           cursor: 'pointer',
           color: '#666'
         }}
@@ -40,10 +40,10 @@ const ViewMoreButton = ({ record, table }) => {
         <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #f0f0f0' }}>
           {additionalFields.map((field) => (
             <div key={field} style={{ marginBottom: '4px', display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontWeight: '600', color: '#888', fontSize: '10px', marginBottom: '1px' }}>
+              <span style={{ fontWeight: '600', color: '#888', fontSize: '12px', marginBottom: '1px' }}>
                 {formatHeader(field)}
               </span>
-              <span style={{ wordBreak: 'break-word', fontSize: '11px', color: '#666' }}>
+              <span style={{ wordBreak: 'break-word', fontSize: '14px', color: '#666' }}>
                 {formatValue(record[field], field)}
               </span>
             </div>
@@ -401,7 +401,7 @@ const DataViewer = () => {
                           onChange={handleSelectAll}
                           style={{ marginRight: '8px', cursor: 'pointer' }}
                         />
-                        <span style={{ fontSize: '14px', color: '#666' }}>全选</span>
+                        <span style={{ fontSize: '16px', color: '#666' }}>全选</span>
                       </label>
                     </div>
                   )}
@@ -428,7 +428,7 @@ const DataViewer = () => {
                               onChange={() => handleRecordSelect(record.id)}
                               style={{ marginRight: '8px', cursor: 'pointer' }}
                             />
-                            <span style={{ fontSize: '14px', color: '#666' }}>选择</span>
+                            <span style={{ fontSize: '16px', color: '#666' }}>选择</span>
                           </label>
                         </div>
                       )}
@@ -436,10 +436,10 @@ const DataViewer = () => {
                       {/* 简化显示，只显示最重要的字段 */}
                       {getImportantFields(selectedTable).map((field) => (
                         <div key={field} style={{ marginBottom: '6px', display: 'flex', flexDirection: 'column' }}>
-                          <span style={{ fontWeight: '600', color: '#666', fontSize: '11px', marginBottom: '2px' }}>
+                          <span style={{ fontWeight: '600', color: '#666', fontSize: '14px', marginBottom: '2px' }}>
                             {formatHeader(field)}
                           </span>
-                          <span style={{ wordBreak: 'break-word', fontSize: '12px' }}>
+                          <span style={{ wordBreak: 'break-word', fontSize: '16px' }}>
                             {formatValue(record[field], field)}
                           </span>
                         </div>
@@ -482,7 +482,7 @@ const DataViewer = () => {
                           padding: '12px',
                           textAlign: 'left',
                           borderBottom: '1px solid #e0e0e0',
-                          fontSize: '14px',
+                          fontSize: '16px',
                           fontWeight: '600'
                         }}>
                           {formatHeader(header)}
@@ -516,7 +516,7 @@ const DataViewer = () => {
                         {getTableHeaders().map((header, index) => (
                         <td key={index} style={{
                           padding: '12px',
-                          fontSize: '14px',
+                          fontSize: '16px',
                           whiteSpace: 'pre-wrap',
                           wordBreak: 'break-word'
                         }}>

@@ -3,20 +3,48 @@ import { Plus, PackageMinus, Search, Trash2, Calculator } from 'lucide-react'
 import { db } from '../db/database'
 import Alert from '../components/Alert'
 
-// 播放成功提示音 - 支持自定义音频文件
-const playSuccessSound = () => {
+// 获取声音设置
+const getSoundSettings = async () => {
   try {
-    // 尝试使用自定义音频文件
-    const audio = new Audio('/audio/success.mp3')
-    audio.volume = 0.1
+    const setting = await db.settings.get({ key: 'soundEnabled' })
+    // 默认启用声音
+    return setting !== undefined ? setting.value : true
+  } catch (error) {
+    console.error('获取声音设置失败:', error)
+    // 默认启用声音
+    return true
+  }
+}
+
+// 播放成功提示音 - 支持自定义音频文件
+const playSuccessSound = async () => {
+  try {
+    // 检查声音设置
+    const isSoundEnabled = await getSoundSettings()
     
-    // 如果音频加载失败，则回退到Web Audio API生成的音效
+    // 如果声音被禁用，不播放声音
+    if (!isSoundEnabled) {
+      return
+    }
+    
+    // 提高音量以确保可听见
+    const audio = new Audio('/audio/success.mp3')
+    audio.volume = 0.5 // 从0.1提高到0.5
+    
+    // 检查并激活AudioContext（解决iOS问题）
+    if (window.AudioContext || window.webkitAudioContext) {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+      if (audioContext.state === 'suspended') {
+        audioContext.resume()
+      }
+    }
+    
     audio.onerror = () => {
       console.log('自定义音频文件未找到，使用默认音效')
       playDefaultSuccessSound()
     }
     
-    audio.play()
+    await audio.play()
   } catch (error) {
     console.error('播放自定义音频失败，使用默认音效:', error)
     playDefaultSuccessSound()
@@ -28,6 +56,11 @@ const playDefaultSuccessSound = () => {
   try {
     const audioContext = new (window.AudioContext || window.webkitAudioContext)()
     
+    // 确保AudioContext处于运行状态（解决iOS问题）
+    if (audioContext.state === 'suspended') {
+      audioContext.resume()
+    }
+    
     // 生成"叮"的声音 (高音)
     const dingOscillator = audioContext.createOscillator()
     const dingGain = audioContext.createGain()
@@ -38,7 +71,7 @@ const playDefaultSuccessSound = () => {
     dingOscillator.frequency.setValueAtTime(1000, audioContext.currentTime)
     dingOscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.1)
     
-    dingGain.gain.setValueAtTime(0.1, audioContext.currentTime)
+    dingGain.gain.setValueAtTime(0.5, audioContext.currentTime) // 提高音量
     dingGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1)
     
     dingOscillator.start(audioContext.currentTime)
@@ -54,7 +87,7 @@ const playDefaultSuccessSound = () => {
     dongOscillator.frequency.setValueAtTime(500, audioContext.currentTime + 0.15)
     dongOscillator.frequency.exponentialRampToValueAtTime(300, audioContext.currentTime + 0.3)
     
-    dongGain.gain.setValueAtTime(0.1, audioContext.currentTime + 0.15)
+    dongGain.gain.setValueAtTime(0.5, audioContext.currentTime + 0.15) // 提高音量
     dongGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3)
     
     dongOscillator.start(audioContext.currentTime + 0.15)
@@ -243,7 +276,7 @@ const StockOut = ({ refreshStats }) => {
       
       setAlertMessage(`出库操作成功完成！销售总额：¥${calculateTotalAmount().toFixed(2)}`)
       setAlertType('success')
-      playSuccessSound() // 播放成功提示音
+      await playSuccessSound() // 播放成功提示音
       refreshStats()
     } catch (error) {
       console.error('出库操作失败:', error)

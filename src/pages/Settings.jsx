@@ -24,6 +24,26 @@ const Settings = () => {
     }
   }
   
+  // 声音设置状态
+  const [soundEnabled, setSoundEnabled] = useState(true)
+  const [soundStatus, setSoundStatus] = useState('')
+
+  // 加载声音设置
+  useEffect(() => {
+    loadSoundSettings()
+  }, [])
+
+  const loadSoundSettings = async () => {
+    try {
+      const setting = await db.settings.get({ key: 'soundEnabled' })
+      if (setting !== undefined) {
+        setSoundEnabled(setting.value)
+      }
+    } catch (error) {
+      console.error('加载声音设置失败:', error)
+    }
+  }
+
   // 保存低库存阈值设置
   const saveLowStockThreshold = async () => {
     try {
@@ -46,6 +66,23 @@ const Settings = () => {
       console.error('保存低库存阈值失败:', error)
       setSaveStatus('保存失败，请重试')
       setTimeout(() => setSaveStatus(''), 3000)
+    }
+  }
+
+  // 保存声音设置
+  const saveSoundSettings = async () => {
+    try {
+      setSoundStatus('正在保存...')
+      
+      // 保存到数据库
+      await db.settings.put({ key: 'soundEnabled', value: soundEnabled })
+      
+      setSoundStatus('保存成功！')
+      setTimeout(() => setSoundStatus(''), 3000)
+    } catch (error) {
+      console.error('保存声音设置失败:', error)
+      setSoundStatus('保存失败，请重试')
+      setTimeout(() => setSoundStatus(''), 3000)
     }
   }
 
@@ -229,6 +266,100 @@ const Settings = () => {
             fontSize: '14px'
           }}>
             {saveStatus}
+          </div>
+        )}
+      </div>
+
+      {/* 声音设置 */}
+      <div className="card" style={{ marginBottom: '32px' }}>
+        <h2 style={{ 
+          fontSize: '20px', 
+          fontWeight: '600', 
+          marginBottom: '24px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <AlertCircle size={20} color="#2196F3" />
+          声音设置
+        </h2>
+        
+        <div style={{ marginBottom: '16px', lineHeight: '1.6' }}>
+          控制出入库操作时的声音提示。
+        </div>
+        
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '16px',
+          flexWrap: 'wrap',
+          marginBottom: '16px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <label htmlFor="soundEnabled" style={{ fontWeight: '500', minWidth: '120px' }}>
+              启用声音提示：
+            </label>
+            <div style={{ 
+              position: 'relative', 
+              display: 'inline-block', 
+              width: '60px', 
+              height: '34px' 
+            }}>
+              <input
+                id="soundEnabled"
+                type="checkbox"
+                checked={soundEnabled}
+                onChange={(e) => setSoundEnabled(e.target.checked)}
+                style={{ opacity: 0, width: 0, height: 0 }}
+              />
+              <span style={{ 
+                position: 'absolute',
+                cursor: 'pointer',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: soundEnabled ? '#4CAF50' : '#ccc',
+                transition: '.4s',
+                borderRadius: '34px'
+              }}>
+                <span style={{ 
+                  position: 'absolute',
+                  content: '',
+                  height: '26px',
+                  width: '26px',
+                  left: '4px',
+                  bottom: '4px',
+                  backgroundColor: 'white',
+                  transition: '.4s',
+                  borderRadius: '50%'
+                }}></span>
+              </span>
+            </div>
+          </div>
+          
+          <button
+            onClick={saveSoundSettings}
+            className="btn btn-primary"
+            style={{ 
+              minHeight: '44px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <Save size={16} />
+            应用设置
+          </button>
+        </div>
+        
+        {soundStatus && (
+          <div style={{
+            color: soundStatus.includes('成功') ? '#4CAF50' : '#f44336',
+            fontWeight: '500',
+            fontSize: '14px'
+          }}>
+            {soundStatus}
           </div>
         )}
       </div>
