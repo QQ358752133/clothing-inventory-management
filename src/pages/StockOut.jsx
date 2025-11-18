@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Plus, PackageMinus, Search, Trash2, Calculator } from 'lucide-react'
+import { Plus, PackageMinus, Trash2, Calculator } from 'lucide-react'
 import { db } from '../db/database'
 import Alert from '../components/Alert'
 
@@ -100,7 +100,6 @@ const playDefaultSuccessSound = () => {
 const StockOut = ({ refreshStats }) => {
   const [clothes, setClothes] = useState([])
   const [inventory, setInventory] = useState([])
-  const [searchTerm, setSearchTerm] = useState('')
   // 默认展开销售项目部，添加一个空的销售项目
   const [stockOutItems, setStockOutItems] = useState([{
     id: Date.now(),
@@ -289,10 +288,7 @@ const StockOut = ({ refreshStats }) => {
     const inventoryItem = inventory.find(inv => inv.clothingId === clothing.id)
     const hasStock = inventoryItem && inventoryItem.quantity > 0
     
-    return hasStock && (
-      clothing.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      clothing.code.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    return hasStock
   })
 
   const calculateTotalAmount = () => {
@@ -302,18 +298,7 @@ const StockOut = ({ refreshStats }) => {
     return Math.round(total * 100) / 100
   }
 
-  const calculateProfit = () => {
-    const profit = stockOutItems.reduce((sum, item) => {
-      const clothing = clothes.find(c => c.id === parseInt(item.clothingId))
-      if (clothing) {
-        const cost = item.quantity * clothing.purchasePrice
-        const revenue = item.quantity * item.sellingPrice
-        return sum + (revenue - cost)
-      }
-      return sum
-    }, 0)
-    return Math.round(profit * 100) / 100
-  }
+
 
   return (
     <div className="container">
@@ -380,31 +365,7 @@ const StockOut = ({ refreshStats }) => {
             
           </div>
 
-          {/* 搜索有库存的服装 */}
-          <div className="form-group" style={{ marginBottom: '24px' }}>
-            <label className="form-label">搜索有库存的服装</label>
-            <div style={{ position: 'relative' }}>
-              <Search size={20} style={{
-                position: 'absolute',
-                left: '12px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: '#999',
-                cursor: 'pointer'
-              }} 
-                onClick={() => document.getElementById('stock-out-search').focus()}
-              />
-              <input
-                id="stock-out-search"
-                type="text"
-                placeholder="搜索服装名称或编码..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="form-input"
-                style={{ paddingLeft: '40px', minHeight: '44px' }}
-              />
-            </div>
-          </div>
+
 
           {/* 出库项目列表 */}
           <div style={{ marginBottom: '24px' }}>
@@ -574,21 +535,6 @@ const StockOut = ({ refreshStats }) => {
                 textAlign: 'center'
               }}>
                 ¥{calculateTotalAmount().toFixed(2)}
-              </div>
-            </div>
-            
-            <div className="form-group">
-              <label className="form-label">预计利润</label>
-              <div style={{
-                padding: '12px',
-                background: '#FFF3E0',
-                borderRadius: '8px',
-                fontWeight: '600',
-                fontSize: '18px',
-                color: '#FF9800',
-                textAlign: 'center'
-              }}>
-                ¥{calculateProfit().toFixed(2)}
               </div>
             </div>
             

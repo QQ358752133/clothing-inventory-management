@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { Database, Search, RefreshCw, Download } from 'lucide-react'
+import { Database, RefreshCw, Download } from 'lucide-react'
 import { db } from '../db/database'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import Alert from '../components/Alert'
@@ -24,11 +24,11 @@ const ViewMoreButton = ({ record, table }) => {
         onClick={() => setExpanded(!expanded)}
         style={{
           marginTop: '8px',
-          padding: '4px 8px',
+          padding: '6px 12px',
           backgroundColor: '#f0f0f0',
           border: 'none',
           borderRadius: '4px',
-          fontSize: '14px',
+          fontSize: '16px',
           cursor: 'pointer',
           color: '#666'
         }}
@@ -40,10 +40,10 @@ const ViewMoreButton = ({ record, table }) => {
         <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #f0f0f0' }}>
           {additionalFields.map((field) => (
             <div key={field} style={{ marginBottom: '4px', display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontWeight: '600', color: '#888', fontSize: '12px', marginBottom: '1px' }}>
+              <span style={{ fontWeight: '600', color: '#888', fontSize: '14px', marginBottom: '2px' }}>
                 {formatHeader(field)}
               </span>
-              <span style={{ wordBreak: 'break-word', fontSize: '14px', color: '#666' }}>
+              <span style={{ wordBreak: 'break-word', fontSize: '16px', color: '#666' }}>
                 {formatValue(record[field], field)}
               </span>
             </div>
@@ -66,10 +66,9 @@ const getImportantFields = (tableName) => {
 }
 
 const DataViewer = () => {
-  const [selectedTable, setSelectedTable] = useState('stockIn')
+  const [selectedTable, setSelectedTable] = useState('stockOut')
   const [records, setRecords] = useState([])
   const [loading, setLoading] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
   const [selectedRecords, setSelectedRecords] = useState([]) // 选中的记录ID数组
   const [selectAll, setSelectAll] = useState(false) // 全选状态
   const isMobile = useMediaQuery('(max-width: 768px)')
@@ -144,13 +143,7 @@ const DataViewer = () => {
     }
   }
 
-  const filteredRecords = records.filter(record => {
-    if (!searchTerm) return true
-    const searchLower = searchTerm.toLowerCase()
-    return Object.values(record).some(value => 
-      String(value).toLowerCase().includes(searchLower)
-    )
-  })
+  const filteredRecords = records
 
   const exportToJson = () => {
     const dataStr = JSON.stringify(filteredRecords, null, 2)
@@ -274,7 +267,7 @@ const DataViewer = () => {
                 justifyContent: 'center',
                 gap: '4px',
                 padding: '6px 10px',
-                fontSize: isMobile ? '12px' : '14px'
+                fontSize: isMobile ? '14px' : '16px'
               }}
             >
             <RefreshCw size={16} />
@@ -294,56 +287,37 @@ const DataViewer = () => {
       </div>
 
       <div className="card" style={{ marginBottom: '24px' }}>
-        <div style={{ marginBottom: '16px' }}>
-          <div className="form-group" style={{ margin: 0, width: '100%' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
-              <Search size={16} style={{ cursor: 'pointer' }} 
-                onClick={() => document.getElementById('data-viewer-search').focus()} // 添加聚焦功能
-              />
-              <input
-                id="data-viewer-search"
-                type="text"
-                placeholder={`搜索记录...`}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="form-input"
-                style={{ flex: 1, minWidth: isMobile ? '100px' : '200px', fontSize: isMobile ? '14px' : '16px' }}
-              />
-            </div>
-          </div>
-        </div>
+
         
-        {/* 删除按钮，仅在入库和出库记录中显示 */}
-        {(selectedTable === 'stockIn' || selectedTable === 'stockOut') && (
-          <div style={{ marginBottom: '16px' }}>
-            <button
-              onClick={handleOpenConfirmDialog}
-              disabled={selectedRecords.length === 0 || isDeleting}
-              className="btn"
-              style={{
-                backgroundColor: '#f44336',
-                color: 'white',
-                border: 'none',
-                padding: '8px 16px',
-                borderRadius: '4px',
-                cursor: selectedRecords.length === 0 || isDeleting ? 'not-allowed' : 'pointer',
-                fontSize: '14px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-            >
-              {isDeleting ? '删除中...' : `删除选中 (${selectedRecords.length})`}
-            </button>
-          </div>
-        )}
+        {/* 删除按钮，在所有表格中显示 */}
+        <div style={{ marginBottom: '16px' }}>
+          <button
+            onClick={handleOpenConfirmDialog}
+            disabled={selectedRecords.length === 0 || isDeleting}
+            className="btn"
+            style={{
+              backgroundColor: '#f44336',
+              color: 'white',
+              border: 'none',
+              padding: '8px 16px',
+              borderRadius: '4px',
+              cursor: selectedRecords.length === 0 || isDeleting ? 'not-allowed' : 'pointer',
+              fontSize: '14px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
+          >
+            {isDeleting ? '删除中...' : `删除选中 (${selectedRecords.length})`}
+          </button>
+        </div>
 
         <div style={{ 
           maxHeight: '70vh', 
           overflowY: 'auto',
           border: '1px solid #e0e0e0',
           borderRadius: '4px',
-          fontSize: isMobile ? '12px' : '14px'
+          fontSize: isMobile ? '14px' : '16px'
         }}>
           {loading ? (
             <div style={{ 
@@ -366,7 +340,7 @@ const DataViewer = () => {
                 // 移动设备：卡片式布局
                 <div style={{ padding: '8px' }}>
                   {/* 移动端删除按钮 */}
-                  {(selectedTable === 'stockIn' || selectedTable === 'stockOut') && selectedRecords.length > 0 && (
+                  {selectedRecords.length > 0 && (
                     <div style={{ marginBottom: '16px', padding: '8px', backgroundColor: '#fff3f3', borderRadius: '4px' }}>
                       <button
                         onClick={handleOpenConfirmDialog}
@@ -392,7 +366,7 @@ const DataViewer = () => {
                   )}
                   
                   {/* 移动端全选按钮 */}
-                  {(selectedTable === 'stockIn' || selectedTable === 'stockOut') && filteredRecords.length > 0 && (
+                  {filteredRecords.length > 0 && (
                     <div style={{ marginBottom: '12px', padding: '8px', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
                       <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
                         <input
@@ -418,20 +392,18 @@ const DataViewer = () => {
                         boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
                       }}
                     >
-                      {/* 复选框，仅在入库和出库记录中显示 */}
-                      {(selectedTable === 'stockIn' || selectedTable === 'stockOut') && (
-                        <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center' }}>
-                          <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                            <input
-                              type="checkbox"
-                              checked={selectedRecords.includes(record.id)}
-                              onChange={() => handleRecordSelect(record.id)}
-                              style={{ marginRight: '8px', cursor: 'pointer' }}
-                            />
-                            <span style={{ fontSize: '16px', color: '#666' }}>选择</span>
-                          </label>
-                        </div>
-                      )}
+                      {/* 复选框，为所有表格添加 */}
+                      <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={selectedRecords.includes(record.id)}
+                            onChange={() => handleRecordSelect(record.id)}
+                            style={{ marginRight: '8px', cursor: 'pointer' }}
+                          />
+                          <span style={{ fontSize: '16px', color: '#666' }}>选择</span>
+                        </label>
+                      </div>
                       
                       {/* 简化显示，只显示最重要的字段 */}
                       {getImportantFields(selectedTable).map((field) => (
@@ -459,24 +431,22 @@ const DataViewer = () => {
                       position: 'sticky',
                       top: 0
                     }}>
-                      {/* 复选框列，仅在入库和出库记录中显示 */}
-                      {(selectedTable === 'stockIn' || selectedTable === 'stockOut') && (
-                        <th key="checkbox" style={{
-                          padding: '12px',
-                          textAlign: 'center',
-                          borderBottom: '1px solid #e0e0e0',
-                          fontSize: '14px',
-                          fontWeight: '600',
-                          width: '40px'
-                        }}>
-                          <input
-                            type="checkbox"
-                            checked={selectAll}
-                            onChange={handleSelectAll}
-                            style={{ cursor: 'pointer' }}
-                          />
-                        </th>
-                      )}
+                      {/* 复选框列，为所有表格添加 */}
+                      <th key="checkbox" style={{
+                        padding: '12px',
+                        textAlign: 'center',
+                        borderBottom: '1px solid #e0e0e0',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        width: '40px'
+                      }}>
+                        <input
+                          type="checkbox"
+                          checked={selectAll}
+                          onChange={handleSelectAll}
+                          style={{ cursor: 'pointer' }}
+                        />
+                      </th>
                       {getTableHeaders().map((header, index) => (
                         <th key={index} style={{
                           padding: '12px',
@@ -496,23 +466,21 @@ const DataViewer = () => {
                         borderBottom: '1px solid #f0f0f0',
                         backgroundColor: recordIndex % 2 === 0 ? '#fff' : '#fafafa'
                       }}>
-                        {/* 复选框列，仅在入库和出库记录中显示 */}
-                        {(selectedTable === 'stockIn' || selectedTable === 'stockOut') && (
-                          <td key="checkbox" style={{
-                            padding: '12px',
-                            textAlign: 'center',
-                            fontSize: '14px',
-                            whiteSpace: 'pre-wrap',
-                            wordBreak: 'break-word'
-                          }}>
-                            <input
-                              type="checkbox"
-                              checked={selectedRecords.includes(record.id)}
-                              onChange={() => handleRecordSelect(record.id)}
-                              style={{ cursor: 'pointer' }}
-                            />
-                          </td>
-                        )}
+                        {/* 复选框列，为所有表格添加 */}
+                        <td key="checkbox" style={{
+                          padding: '12px',
+                          textAlign: 'center',
+                          fontSize: '14px',
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word'
+                        }}>
+                          <input
+                            type="checkbox"
+                            checked={selectedRecords.includes(record.id)}
+                            onChange={() => handleRecordSelect(record.id)}
+                            style={{ cursor: 'pointer' }}
+                          />
+                        </td>
                         {getTableHeaders().map((header, index) => (
                         <td key={index} style={{
                           padding: '12px',

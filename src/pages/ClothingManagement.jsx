@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Edit, Trash2, Shirt, Search, Plus, ChevronDown, ChevronUp } from 'lucide-react'
+import { Edit, Trash2, Shirt, Plus, ChevronDown, ChevronUp } from 'lucide-react'
 import { db } from '../db/database'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import Alert from '../components/Alert'
@@ -7,7 +7,6 @@ import Alert from '../components/Alert'
 const ClothingManagement = ({ refreshStats }) => {
   const [clothes, setClothes] = useState([])
   const [isLoading, setIsLoading] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
   const [editingClothing, setEditingClothing] = useState(null)
   const [editingInventory, setEditingInventory] = useState(null)
   const [alertMessage, setAlertMessage] = useState('')
@@ -233,17 +232,8 @@ const ClothingManagement = ({ refreshStats }) => {
     }))
   }
 
-  // 过滤搜索结果
-  const filteredClothes = clothes.filter(clothing => {
-    const search = searchTerm.toLowerCase()
-    return (
-      clothing.code.toLowerCase().includes(search) ||
-      clothing.name.toLowerCase().includes(search) ||
-      clothing.category.toLowerCase().includes(search) ||
-      clothing.size.toLowerCase().includes(search) ||
-      clothing.color.toLowerCase().includes(search)
-    )
-  })
+  // 不再需要过滤搜索结果，直接返回所有服装
+  const filteredClothes = clothes
 
   // 常用尺寸选项
   const sizes = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL']
@@ -269,29 +259,7 @@ const ClothingManagement = ({ refreshStats }) => {
           服装管理
         </h1>
         
-        <div style={{ position: 'relative' }}>
-          <Search size={18} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#666', cursor: 'pointer' }} 
-            onClick={() => document.getElementById('clothing-search').focus()} // 添加聚焦功能
-          />
-          <input
-            id="clothing-search"
-            type="text"
-            placeholder="搜索商品..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              padding: '8px 12px 8px 32px',
-              borderRadius: '6px',
-              border: '1px solid #ddd',
-              fontSize: '14px',
-              minWidth: isMobile ? '100px' : '200px',
-              outline: 'none',
-              transition: 'border-color 0.3s'
-            }}
-            onFocus={(e) => e.target.style.borderColor = '#2196F3'}
-            onBlur={(e) => e.target.style.borderColor = '#ddd'}
-          />
-        </div>
+
 
       </div>
 
