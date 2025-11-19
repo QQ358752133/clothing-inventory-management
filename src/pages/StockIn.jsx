@@ -581,7 +581,7 @@ const StockIn = ({ refreshStats }) => {
                           backgroundColor: selectedSizes.includes(size) ? '#3b82f6' : 'white',
                           color: selectedSizes.includes(size) ? 'white' : 'black',
                           boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-                          minWidth: '100px'
+                          minWidth: size === 'XXXL' ? '100px' : '80px'
                         }}>
                           <input
                             type="checkbox"
