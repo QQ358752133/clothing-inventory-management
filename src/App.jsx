@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import Header from './components/Header'
 import Navigation from './components/Navigation'
@@ -11,7 +11,7 @@ import Reports from './pages/Reports'
 import Settings from './pages/Settings'
 import DataViewer from './pages/DataViewer'
 import OfflineIndicator from './components/OfflineIndicator'
-import { db } from './db/database'
+import { db, setupNetworkListeners, cleanupNetworkListeners } from './db/database'
 
 // 路由切换时滚动到页面顶部的组件
 function ScrollToTop() {
@@ -31,9 +31,21 @@ function App() {
     totalValue: 0,
     lowStockItems: 0
   })
+  
+  // 组件卸载检测引用
+  const isMountedRef = useRef(true)
 
   useEffect(() => {
     loadInventoryStats()
+    
+    // 设置网络状态监听器
+    setupNetworkListeners()
+    
+    // 组件卸载时清理资源
+    return () => {
+      isMountedRef.current = false
+      cleanupNetworkListeners()
+    }
   }, [])
 
   const loadInventoryStats = async () => {
@@ -41,9 +53,19 @@ function App() {
       // 获取服装总数
       const clothesCount = await db.clothes.count()
       
+      // 检查组件是否仍在挂载
+      if (!isMountedRef.current) return
+      
       // 计算库存总价值
       const inventoryItems = await db.inventory.toArray()
+      
+      // 再次检查组件是否仍在挂载
+      if (!isMountedRef.current) return
+      
       const clothes = await db.clothes.toArray()
+      
+      // 最后一次检查组件是否仍在挂载
+      if (!isMountedRef.current) return
       
       let totalValue = 0
       let lowStockCount = 0
@@ -58,11 +80,14 @@ function App() {
         }
       })
       
-      setInventoryStats({
-        totalClothes: clothesCount,
-        totalValue: totalValue,
-        lowStockItems: lowStockCount
-      })
+      // 安全地更新状态，只有在组件挂载时才执行
+      if (isMountedRef.current) {
+        setInventoryStats({
+          totalClothes: clothesCount,
+          totalValue: totalValue,
+          lowStockItems: lowStockCount
+        })
+      }
     } catch (error) {
       console.error('加载库存统计失败:', error)
     }

@@ -22,28 +22,37 @@ export default defineConfig({
         lang: 'zh-CN',
         dir: 'ltr',
         icons: [
-          {
-            src: '/女装.svg',
-            sizes: '192x192',
+          { 
+            src: '/女装.svg', 
+            sizes: '192x192', 
             type: 'image/svg+xml',
             purpose: 'any maskable'
           },
-          {
-            src: '/女装.svg',
-            sizes: '512x512',
+          { 
+            src: '/女装.svg', 
+            sizes: '512x512', 
             type: 'image/svg+xml',
             purpose: 'any maskable'
           },
-          {
-            src: '/女装.png',
-            sizes: '180x180',
+          { 
+            src: '/女装.png', 
+            sizes: '180x180', 
             type: 'image/png',
             purpose: 'any'
           }
         ]
       },
+      devOptions: {
+        enabled: false,
+        type: 'module',
+        navigateFallback: 'index.html',
+        // 禁用Service Worker的热重载以减少警告
+        reloadOnOnline: false,
+        // 禁用自动注册以避免冲突
+        register: false
+      },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}', 'registerSW.js'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

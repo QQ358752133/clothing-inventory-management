@@ -180,7 +180,7 @@ const StockIn = ({ refreshStats }) => {
   }
   
   // 新增服装的尺码、颜色、品类常量
-  const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
+  const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', '均码']
   // 按字数排序颜色：先显示两个字的颜色，再显示三个字的颜色
   const colors = [
     // 两个字的颜色
@@ -413,9 +413,11 @@ const StockIn = ({ refreshStats }) => {
             marginBottom: '24px'
           }}>
             <div className="form-group">
-              <label className="form-label">入库日期 *</label>
+              <label className="form-label" htmlFor="stockInDate">入库日期 *</label>
               <input
                 type="date"
+                id="stockInDate"
+                name="stockInDate"
                 required
                 value={formData.date}
                 onChange={(e) => setFormData({...formData, date: e.target.value})}
@@ -424,9 +426,11 @@ const StockIn = ({ refreshStats }) => {
             </div>
             
             <div className="form-group">
-              <label className="form-label">操作员 *</label>
+              <label className="form-label" htmlFor="operator">操作员 *</label>
               <input
                 type="text"
+                id="operator"
+                name="operator"
                 required
                 value={formData.operator}
                 onChange={(e) => setFormData({...formData, operator: e.target.value})}
@@ -458,9 +462,11 @@ const StockIn = ({ refreshStats }) => {
                   marginBottom: '24px'
                 }}>
                   <div className="form-group">
-                    <label className="form-label">服装编码 *</label>
+                    <label className="form-label" htmlFor="clothingCode">服装编码 *</label>
                     <input
                       type="text"
+                      id="clothingCode"
+                      name="clothingCode"
                       required
                       value={addClothingFormData.code}
                       onChange={(e) => setAddClothingFormData({...addClothingFormData, code: e.target.value})}
@@ -470,9 +476,11 @@ const StockIn = ({ refreshStats }) => {
                   </div>
                   
                   <div className="form-group">
-                    <label className="form-label">服装名称 *</label>
+                    <label className="form-label" htmlFor="clothingName">服装名称 *</label>
                     <input
                       type="text"
+                      id="clothingName"
+                      name="clothingName"
                       required
                       value={addClothingFormData.name}
                       onChange={(e) => setAddClothingFormData({...addClothingFormData, name: e.target.value})}
@@ -482,8 +490,10 @@ const StockIn = ({ refreshStats }) => {
                   </div>
                   
                   <div className="form-group">
-                    <label className="form-label">品类 *</label>
+                    <label className="form-label" htmlFor="category">品类 *</label>
                     <select
+                      id="category"
+                      name="category"
                       required
                       value={addClothingFormData.category}
                       onChange={(e) => setAddClothingFormData({...addClothingFormData, category: e.target.value})}
@@ -496,23 +506,29 @@ const StockIn = ({ refreshStats }) => {
                       <option value="其他">其他</option>
                     </select>
                     {addClothingFormData.category === '其他' && (
-                      <input
-                        type="text"
-                        className="form-input"
-                        style={{ marginTop: '8px' }}
-                        value={addClothingFormData.categoryCustom}
-                        onChange={(e) => setAddClothingFormData({...addClothingFormData, categoryCustom: e.target.value})}
-                        placeholder="手动输入品类名称"
-                        required={addClothingFormData.category === '其他'}
-                      />
+                      <div>
+                        <label className="form-label" htmlFor="categoryCustom" style={{ fontSize: '14px', marginTop: '8px', display: 'block' }}>自定义品类 *</label>
+                        <input
+                          type="text"
+                          id="categoryCustom"
+                          name="categoryCustom"
+                          className="form-input"
+                          value={addClothingFormData.categoryCustom}
+                          onChange={(e) => setAddClothingFormData({...addClothingFormData, categoryCustom: e.target.value})}
+                          placeholder="手动输入品类名称"
+                          required={addClothingFormData.category === '其他'}
+                        />
+                      </div>
                     )}
                   </div>
                   
                   <div className="form-group">
-                    <label className="form-label">进货价格 *</label>
+                    <label className="form-label" htmlFor="purchasePrice">进货价格 *</label>
                     <input
                       type="number"
                       step="0.01"
+                      id="purchasePrice"
+                      name="purchasePrice"
                       required
                       value={addClothingFormData.purchasePrice}
                       onChange={(e) => {
@@ -528,10 +544,12 @@ const StockIn = ({ refreshStats }) => {
                   </div>
                   
                   <div className="form-group">
-                    <label className="form-label">销售价格 *</label>
+                    <label className="form-label" htmlFor="sellingPrice">销售价格 *</label>
                     <input
                       type="number"
                       step="0.01"
+                      id="sellingPrice"
+                      name="sellingPrice"
                       required
                       value={addClothingFormData.sellingPrice}
                       onChange={(e) => {
@@ -548,22 +566,27 @@ const StockIn = ({ refreshStats }) => {
                   
                   <div className="form-group">
                     <label className="form-label">尺码 *</label>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
                       {sizes.map(size => (
-                        <label key={size} style={{ 
+                        <label key={size} htmlFor={`size-${size}`} style={{ 
                           display: 'flex', 
                           alignItems: 'center', 
+                          justifyContent: 'center',
                           gap: '4px',
-                          padding: '8px 12px',
+                          padding: '10px 12px',
                           borderRadius: '6px',
                           border: '1px solid #e5e7eb',
                           cursor: 'pointer',
-                          transition: 'all 0.2s',
+                          transition: 'all 0.2s ease',
                           backgroundColor: selectedSizes.includes(size) ? '#3b82f6' : 'white',
-                          color: selectedSizes.includes(size) ? 'white' : 'black'
+                          color: selectedSizes.includes(size) ? 'white' : 'black',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                          minWidth: '80px'
                         }}>
                           <input
                             type="checkbox"
+                            id={`size-${size}`}
+                            name={`size-${size}`}
                             value={size}
                             checked={selectedSizes.includes(size)}
                             onChange={(e) => {
@@ -585,23 +608,28 @@ const StockIn = ({ refreshStats }) => {
                   
                   <div className="form-group">
                     <label className="form-label">颜色 *</label>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '12px' }}>
                       {colors.map(color => (
-                        <label key={color} style={{ 
+                        <label key={color} htmlFor={`color-${color}`} style={{ 
                           display: 'flex', 
                           alignItems: 'center', 
+                          justifyContent: 'center',
                           gap: '4px',
-                          padding: '8px 12px',
+                          padding: '10px 12px',
                           borderRadius: '6px',
                           border: '1px solid #e5e7eb',
                           cursor: 'pointer',
-                          transition: 'all 0.2s',
+                          transition: 'all 0.2s ease',
                           backgroundColor: selectedColors.includes(color) ? '#3b82f6' : 'white',
                           color: selectedColors.includes(color) ? 'white' : 'black',
-                          fontSize: color.length === 3 ? '12px' : '14px' // 三个字的颜色使用更小的字体
+                          fontSize: color.length === 3 ? '12px' : '14px', // 三个字的颜色使用更小的字体
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                          minWidth: '70px'
                         }}>
                           <input
                             type="checkbox"
+                            id={`color-${color}`}
+                            name={`color-${color}`}
                             value={color}
                             checked={selectedColors.includes(color)}
                             onChange={(e) => {
@@ -618,12 +646,15 @@ const StockIn = ({ refreshStats }) => {
                       ))}
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <label className="form-label" htmlFor="customColorInput" style={{ margin: 0 }}>添加自定义颜色：</label>
                       <input
                         type="text"
+                        id="customColorInput"
+                        name="customColorInput"
                         className="form-input"
                         value={customColorInput}
                         onChange={(e) => setCustomColorInput(e.target.value)}
-                        placeholder="添加自定义颜色"
+                        placeholder="自定义颜色"
                       />
                       <button
                         type="button"
@@ -690,27 +721,29 @@ const StockIn = ({ refreshStats }) => {
                                     }}
                                   >
                                     <input
-                                      type="number"
-                                      step="1"
-                                      min="0"
-                                      value={quantityMatrix[key] || ''}
-                                      onChange={(e) => {
-                                        const value = e.target.value ? parseInt(e.target.value) : ''
-                                        setQuantityMatrix(prev => ({
-                                          ...prev,
-                                          [key]: value
-                                        }))
-                                      }}
-                                      onWheel={(e) => e.target.blur()}
-                                      className="form-input"
-                                      placeholder={`${size}码数量`}
-                                      style={{ 
-                                        textAlign: 'center',
-                                        margin: 0,
-                                        border: '1px solid #d0d0d0',
-                                        borderRadius: '4px'
-                                      }}
-                                    />
+                                        type="number"
+                                        step="1"
+                                        min="0"
+                                        id={`quantity-${color}-${size}`}
+                                        name={`quantity-${color}-${size}`}
+                                        value={quantityMatrix[key] || ''}
+                                        onChange={(e) => {
+                                          const value = e.target.value ? parseInt(e.target.value) : ''
+                                          setQuantityMatrix(prev => ({
+                                            ...prev,
+                                            [key]: value
+                                          }))
+                                        }}
+                                        onWheel={(e) => e.target.blur()}
+                                        className="form-input"
+                                        placeholder={`${size}码数量`}
+                                        style={{ 
+                                          textAlign: 'center',
+                                          margin: 0,
+                                          border: '1px solid #d0d0d0',
+                                          borderRadius: '4px'
+                                        }}
+                                      />
                                   </div>
                                 )
                               })
@@ -751,8 +784,10 @@ const StockIn = ({ refreshStats }) => {
                   </div>
                   
                   <div className="form-group">
-                    <label className="form-label">备注</label>
+                    <label className="form-label" htmlFor="remark">备注</label>
                     <textarea
+                      id="remark"
+                      name="remark"
                       value={addClothingFormData.remark}
                       onChange={(e) => setAddClothingFormData({...addClothingFormData, remark: e.target.value})}
                       className="form-input"
@@ -766,8 +801,9 @@ const StockIn = ({ refreshStats }) => {
                   <button 
                     type="submit"
                     className="btn btn-primary"
-                    style={{ minHeight: '44px' }}
+                    style={{ minHeight: '44px', display: 'flex', alignItems: 'center', gap: '8px' }}
                   >
+                    <PackagePlus size={16} />
                     保存并入库
                   </button>
                 </div>

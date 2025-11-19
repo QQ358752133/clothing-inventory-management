@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react'
-import { Database, RefreshCw, Download } from 'lucide-react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
+import { Database, RefreshCw, Download, Trash2 } from 'lucide-react'
 import { db } from '../db/database'
 import Alert from '../components/Alert'
 
@@ -85,14 +85,39 @@ const DataViewer = () => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [alertMessage, setAlertMessage] = useState('')
   const [alertType, setAlertType] = useState('')
+  
+  // 组件卸载检测引用
+  const isMountedRef = useRef(true)
 
+  useEffect(() => {
+    // 组件卸载时设置标志
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+  
   useEffect(() => {
     loadRecords()
   }, [selectedTable])
+  
+  // 安全地设置状态
+  const safeSetState = (stateUpdater) => {
+    if (isMountedRef.current) {
+      setRecords(stateUpdater)
+    }
+  }
+  
+  // 安全地设置其他状态
+  const safeSetOtherState = (setter, value) => {
+    if (isMountedRef.current) {
+      setter(value)
+    }
+  }
 
   const loadRecords = async () => {
     try {
-      setLoading(true)
+      // 使用安全的状态更新
+      safeSetOtherState(setLoading, true)
       let tableData
       
       // 先获取服装数据，用于关联显示
@@ -101,6 +126,12 @@ const DataViewer = () => {
       allClothes.forEach(cloth => {
         clothesMap.set(cloth.id, cloth)
       })
+      
+      // 检查组件是否仍在挂载
+      if (!isMountedRef.current) {
+        safeSetOtherState(setLoading, false)
+        return
+      }
       
       switch (selectedTable) {
         case 'stockIn':
@@ -143,12 +174,18 @@ const DataViewer = () => {
           tableData = []
       }
       
-      setRecords(tableData)
+      // 安全地更新状态
+      safeSetState(tableData)
     } catch (error) {
       console.error('加载数据失败:', error)
-      alert('加载数据失败，请刷新页面重试')
+      // 使用自定义Alert组件代替alert
+      if (isMountedRef.current) {
+        safeSetOtherState(setAlertMessage, '加载数据失败，请刷新页面重试')
+        safeSetOtherState(setAlertType, 'error')
+      }
     } finally {
-      setLoading(false)
+      // 使用安全的状态更新
+      safeSetOtherState(setLoading, false)
     }
   }
 
@@ -168,67 +205,87 @@ const DataViewer = () => {
 
   // 处理单个记录选择
   const handleRecordSelect = (recordId) => {
-    setSelectedRecords(prev => {
+    // 使用安全的状态更新
+    safeSetOtherState(setSelectedRecords, prev => {
       if (prev.includes(recordId)) {
         return prev.filter(id => id !== recordId)
       } else {
         return [...prev, recordId]
       }
     })
-    setSelectAll(false) // 如果取消选择，全选状态也应该取消
+    // 安全地取消全选状态
+    safeSetOtherState(setSelectAll, false)
   }
 
   // 处理全选
   const handleSelectAll = () => {
     if (selectAll) {
-      setSelectedRecords([])
-      setSelectAll(false)
+      // 使用安全的状态更新
+      safeSetOtherState(setSelectedRecords, [])
+      safeSetOtherState(setSelectAll, false)
     } else {
       const allIds = filteredRecords.map(record => record.id)
-      setSelectedRecords(allIds)
-      setSelectAll(true)
+      // 使用安全的状态更新
+      safeSetOtherState(setSelectedRecords, allIds)
+      safeSetOtherState(setSelectAll, true)
     }
   }
 
   // 打开确认删除对话框
   const handleOpenConfirmDialog = () => {
     if (selectedRecords.length === 0) {
-      setAlertMessage('请先选择要删除的记录')
-      setAlertType('warning')
+      // 使用安全的状态更新
+      safeSetOtherState(setAlertMessage, '请先选择要删除的记录')
+      safeSetOtherState(setAlertType, 'warning')
       return
     }
-    setShowConfirmDialog(true)
+    // 使用安全的状态更新
+    safeSetOtherState(setShowConfirmDialog, true)
   }
 
   // 关闭确认删除对话框
   const handleCloseConfirmDialog = () => {
-    setShowConfirmDialog(false)
+    // 使用安全的状态更新
+    safeSetOtherState(setShowConfirmDialog, false)
   }
 
   // 删除选中的记录
   const handleDeleteSelected = async () => {
-    setShowConfirmDialog(false)
+    // 使用安全的状态更新
+    safeSetOtherState(setShowConfirmDialog, false)
     try {
-      setIsDeleting(true)
+      // 使用安全的状态更新
+      safeSetOtherState(setIsDeleting, true)
       
       for (const recordId of selectedRecords) {
         await db[selectedTable].delete(recordId)
       }
 
+      // 检查组件是否仍在挂载
+      if (!isMountedRef.current) {
+        safeSetOtherState(setIsDeleting, false)
+        return
+      }
+
       // 重新加载数据
       loadRecords()
       // 清空选中状态
-      setSelectedRecords([])
-      setSelectAll(false)
+      safeSetOtherState(setSelectedRecords, [])
+      safeSetOtherState(setSelectAll, false)
       
-      setAlertMessage('删除成功')
-      setAlertType('success')
+      // 使用安全的状态更新
+      safeSetOtherState(setAlertMessage, '删除成功')
+      safeSetOtherState(setAlertType, 'success')
     } catch (error) {
       console.error('删除记录失败:', error)
-      setAlertMessage('删除失败，请重试')
-      setAlertType('error')
+      // 只有在组件挂载时才显示错误
+      if (isMountedRef.current) {
+        safeSetOtherState(setAlertMessage, '删除失败，请重试')
+        safeSetOtherState(setAlertType, 'error')
+      }
     } finally {
-      setIsDeleting(false)
+      // 使用安全的状态更新
+      safeSetOtherState(setIsDeleting, false)
     }
   }
 
@@ -243,8 +300,8 @@ const DataViewer = () => {
       backgroundColor: '#f8f9fa',
       minHeight: '100vh'
     }}>
-      {/* 添加CSS动画 */}
-      <style jsx>{`
+      {/* 添加CSS动画样式 - 使用内联样式代替jsx标签 */}
+      <style>{`
         @keyframes slideDown {
           from {
             opacity: 0;
@@ -533,20 +590,22 @@ const DataViewer = () => {
                             <span style={{ fontSize: '14px', color: '#6c757d', fontWeight: '500' }}>选择记录</span>
                           </label>
                           
-                          {/* 记录状态标识 */}
-                          <div style={{
-                            padding: '4px 12px',
-                            borderRadius: '12px',
-                            backgroundColor: '#e3f2fd',
-                            color: '#1976d2',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.5px'
-                          }}>
-                            {selectedTable === 'stockIn' ? '入库' : 
-                             selectedTable === 'stockOut' ? '出库' : 
-                             selectedTable === 'clothes' ? '服装' : '库存'}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            {/* 记录状态标识 */}
+                            <div style={{
+                              padding: '4px 12px',
+                              borderRadius: '12px',
+                              backgroundColor: '#e3f2fd',
+                              color: '#1976d2',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.5px'
+                            }}>
+                              {selectedTable === 'stockIn' ? '入库' : 
+                               selectedTable === 'stockOut' ? '出库' : 
+                               selectedTable === 'clothes' ? '服装' : '库存'}
+                            </div>
                           </div>
                         </div>
                         
@@ -690,15 +749,26 @@ const DataViewer = () => {
                   cursor: isDeleting ? 'not-allowed' : 'pointer',
                   opacity: isDeleting ? 0.7 : 1,
                   flex: 1,
-                  minHeight: '50px'
+                  minHeight: '50px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
                 }}
               >
-                {isDeleting ? '删除中...' : '确定'}
+                {isDeleting ? '删除中...' : (
+                  <>
+                    <Trash2 size={18} />
+                    确定
+                  </>
+                )}
               </button>
             </div>
           </div>
         </div>
       )}
+
+
     </div>
   )
 }
@@ -713,6 +783,8 @@ const getTableTitle = (tableName) => {
   }
   return titles[tableName] || tableName
 }
+
+
 
 const formatHeader = (header) => {
   const replacements = {

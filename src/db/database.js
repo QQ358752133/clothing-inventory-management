@@ -45,12 +45,38 @@ export class ClothingInventoryDB extends Dexie {
 
 export const db = new ClothingInventoryDB()
 
-// 监听网络状态变化
-window.addEventListener('online', () => {
-  console.log('网络已连接，可以同步数据')
-  // 这里可以添加数据同步逻辑
-})
+// 网络状态监听管理
+let onlineListener = null;
+let offlineListener = null;
 
-window.addEventListener('offline', () => {
-  console.log('网络已断开，进入离线模式')
-})
+// 添加网络状态监听器
+export const setupNetworkListeners = () => {
+  // 确保不会重复添加监听器
+  if (!onlineListener) {
+    onlineListener = () => {
+      console.log('网络已连接，可以同步数据');
+      // 这里可以添加数据同步逻辑
+    };
+    window.addEventListener('online', onlineListener);
+  }
+  
+  if (!offlineListener) {
+    offlineListener = () => {
+      console.log('网络已断开，进入离线模式');
+    };
+    window.addEventListener('offline', offlineListener);
+  }
+};
+
+// 移除网络状态监听器
+export const cleanupNetworkListeners = () => {
+  if (onlineListener) {
+    window.removeEventListener('online', onlineListener);
+    onlineListener = null;
+  }
+  
+  if (offlineListener) {
+    window.removeEventListener('offline', offlineListener);
+    offlineListener = null;
+  }
+};

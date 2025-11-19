@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from 'react'
-import { Plus, PackageMinus, Trash2, Calculator } from 'lucide-react'
+import React, { useState, useEffect, useRef } from 'react'
+import { Plus, PackageMinus, Trash2, Calculator, RefreshCw } from 'lucide-react'
 import { db } from '../db/database'
 import Alert from '../components/Alert'
+
+// 移除全局变量和事件监听器，避免内存泄漏
 
 // 获取声音设置
 const getSoundSettings = async () => {
   try {
+    // 检查声音设置
     const setting = await db.settings.get({ key: 'soundEnabled' })
     // 默认启用声音
     return setting !== undefined ? setting.value : true
@@ -14,6 +17,17 @@ const getSoundSettings = async () => {
     // 默认启用声音
     return true
   }
+}
+
+// 检查资源文件是否存在
+const checkResourceExists = (url) => {
+  return new Promise((resolve) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('HEAD', url)
+    xhr.onload = () => resolve(xhr.status === 200)
+    xhr.onerror = () => resolve(false)
+    xhr.send()
+  })
 }
 
 // 播放成功提示音 - 支持自定义音频文件
@@ -27,77 +41,122 @@ const playSuccessSound = async () => {
       return
     }
     
-    // 提高音量以确保可听见
-    const audio = new Audio('/audio/success.mp3')
-    audio.volume = 0.5 // 从0.1提高到0.5
-    
-    // 检查并激活AudioContext（解决iOS问题）
-    if (window.AudioContext || window.webkitAudioContext) {
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)()
-      if (audioContext.state === 'suspended') {
-        audioContext.resume()
+    // 使用try-catch包装整个音频处理逻辑
+    try {
+      // 先检查音频文件是否存在
+      const audioExists = await checkResourceExists('/audio/success.mp3')
+      
+      if (audioExists) {
+        // 使用更安全的方式创建和播放音频
+        try {
+          const audio = new Audio('/audio/success.mp3')
+          audio.volume = 0.5
+          
+          // 安全地播放音频
+          await audio.play()
+        } catch (audioError) {
+          console.warn('无法播放外部音频文件，切换到默认音效')
+          playDefaultSuccessSound()
+        }
+      } else {
+        // 如果音频文件不存在，使用默认音效
+        playDefaultSuccessSound()
       }
+    } catch (error) {
+      console.warn('音频处理出错，跳过声音播放')
+      // 静默失败，不影响应用流程
     }
-    
-    audio.onerror = () => {
-      console.log('自定义音频文件未找到，使用默认音效')
-      playDefaultSuccessSound()
-    }
-    
-    await audio.play()
   } catch (error) {
-    console.error('播放自定义音频失败，使用默认音效:', error)
-    playDefaultSuccessSound()
+    // 捕获所有可能的错误，确保不影响应用
+    console.debug('播放声音出错但已处理:', error)
   }
 }
 
 // 默认的成功提示音 - 叮咚音效
 const playDefaultSuccessSound = () => {
+  // 使用更安全的方式，避免在不支持的环境中出错
+  if (!window.AudioContext && !window.webkitAudioContext) {
+    return // 不支持AudioContext，静默退出
+  }
+  
   try {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+    // 使用try-catch包装每个AudioContext操作
+    const AudioContext = window.AudioContext || window.webkitAudioContext
+    const audioContext = new AudioContext()
     
-    // 确保AudioContext处于运行状态（解决iOS问题）
+    // 确保AudioContext处于运行状态
     if (audioContext.state === 'suspended') {
-      audioContext.resume()
+      audioContext.resume().catch(() => {}) // 忽略可能的错误
     }
     
-    // 生成"叮"的声音 (高音)
-    const dingOscillator = audioContext.createOscillator()
-    const dingGain = audioContext.createGain()
-    dingOscillator.connect(dingGain)
-    dingGain.connect(audioContext.destination)
+    // 使用Promise.all处理两个声音，确保不会互相阻塞
+    const playDingSound = () => {
+      try {
+        const oscillator = audioContext.createOscillator()
+        const gain = audioContext.createGain()
+        oscillator.connect(gain)
+        gain.connect(audioContext.destination)
+        
+        oscillator.type = 'sine'
+        oscillator.frequency.setValueAtTime(1000, audioContext.currentTime)
+        oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.1)
+        
+        gain.gain.setValueAtTime(0.5, audioContext.currentTime)
+        gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1)
+        
+        oscillator.start(audioContext.currentTime)
+        oscillator.stop(audioContext.currentTime + 0.1)
+      } catch (e) {
+        console.debug('高音播放失败:', e)
+      }
+    }
     
-    dingOscillator.type = 'sine'
-    dingOscillator.frequency.setValueAtTime(1000, audioContext.currentTime)
-    dingOscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.1)
+    const playDongSound = () => {
+      try {
+        const oscillator = audioContext.createOscillator()
+        const gain = audioContext.createGain()
+        oscillator.connect(gain)
+        gain.connect(audioContext.destination)
+        
+        oscillator.type = 'sine'
+        oscillator.frequency.setValueAtTime(500, audioContext.currentTime + 0.15)
+        oscillator.frequency.exponentialRampToValueAtTime(300, audioContext.currentTime + 0.3)
+        
+        gain.gain.setValueAtTime(0.5, audioContext.currentTime + 0.15)
+        gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3)
+        
+        oscillator.start(audioContext.currentTime + 0.15)
+        oscillator.stop(audioContext.currentTime + 0.3)
+      } catch (e) {
+        console.debug('低音播放失败:', e)
+      }
+    }
     
-    dingGain.gain.setValueAtTime(0.5, audioContext.currentTime) // 提高音量
-    dingGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1)
-    
-    dingOscillator.start(audioContext.currentTime)
-    dingOscillator.stop(audioContext.currentTime + 0.1)
-    
-    // 生成"咚"的声音 (低音)
-    const dongOscillator = audioContext.createOscillator()
-    const dongGain = audioContext.createGain()
-    dongOscillator.connect(dongGain)
-    dongGain.connect(audioContext.destination)
-    
-    dongOscillator.type = 'sine'
-    dongOscillator.frequency.setValueAtTime(500, audioContext.currentTime + 0.15)
-    dongOscillator.frequency.exponentialRampToValueAtTime(300, audioContext.currentTime + 0.3)
-    
-    dongGain.gain.setValueAtTime(0.5, audioContext.currentTime + 0.15) // 提高音量
-    dongGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3)
-    
-    dongOscillator.start(audioContext.currentTime + 0.15)
-    dongOscillator.stop(audioContext.currentTime + 0.3)
+    playDingSound()
+    playDongSound()
   } catch (error) {
-    console.error('播放默认声音失败:', error)
+    // 静默处理错误，不影响应用流程
+    console.debug('播放默认声音失败但已处理:', error)
   }
 }
 
 const StockOut = ({ refreshStats }) => {
+  // 组件卸载检测引用
+  const isMountedRef = useRef(true)
+  
+  // 组件卸载时设置标志
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+  
+  // 安全的状态更新函数
+  const safeSetState = (setStateFn, ...args) => {
+    if (isMountedRef.current) {
+      setStateFn(...args)
+    }
+  }
   const [clothes, setClothes] = useState([])
   const [inventory, setInventory] = useState([])
   // 默认展开销售项目部，添加一个空的销售项目
@@ -124,7 +183,8 @@ const StockOut = ({ refreshStats }) => {
   })
   // 页面加载时更新日期，确保即使组件被缓存也能获取最新日期
   useEffect(() => {
-    setFormData(prev => ({ ...prev, date: getCurrentDate() }))
+    // 使用安全的状态更新
+    safeSetState(setFormData, prev => ({ ...prev, date: getCurrentDate() }))
   }, [])
   
   // 自定义弹窗状态
@@ -136,14 +196,44 @@ const StockOut = ({ refreshStats }) => {
   }, [])
 
   const loadData = async () => {
+    // 立即检查组件是否已卸载
+    if (!isMountedRef.current) return
+    
     try {
+      // 创建可取消的Promise包装器
+      const cancelablePromise = (promise) => {
+        let canceled = false;
+        const wrappedPromise = new Promise((resolve, reject) => {
+          promise.then(
+            value => canceled ? reject({ canceled: true }) : resolve(value),
+            error => canceled ? reject({ canceled: true }) : reject(error)
+          );
+        });
+        return {
+          promise: wrappedPromise,
+          cancel: () => canceled = true
+        };
+      };
+      
+      // 包装异步操作
+      const clothesPromise = cancelablePromise(db.clothes.toArray());
+      const inventoryPromise = cancelablePromise(db.inventory.toArray());
+      
+      // 等待结果
       const [allClothes, allInventory] = await Promise.all([
-        db.clothes.toArray(),
-        db.inventory.toArray()
-      ])
-      setClothes(allClothes)
-      setInventory(allInventory)
+        clothesPromise.promise,
+        inventoryPromise.promise
+      ]);
+      
+      // 再次检查组件是否仍在挂载
+      if (!isMountedRef.current) return
+      
+      // 使用安全的状态更新
+      safeSetState(setClothes, allClothes)
+      safeSetState(setInventory, allInventory)
     } catch (error) {
+      // 如果是取消的操作，不处理错误
+      if (error && error.canceled) return;
       console.error('加载数据失败:', error)
     }
   }
@@ -195,13 +285,17 @@ const StockOut = ({ refreshStats }) => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     
+    // 立即检查组件是否已卸载
+    if (!isMountedRef.current) return
+    
     // 验证数据
     const invalidItems = stockOutItems.filter(item => 
       !item.clothingId || item.quantity <= 0 || item.sellingPrice <= 0
     )
     
     if (invalidItems.length > 0) {
-      alert('请完善所有出库项目的服装、数量和销售价格信息')
+      safeSetState(setAlertMessage, '请完善所有出库项目的服装、数量和销售价格信息')
+      safeSetState(setAlertType, 'error')
       return
     }
 
@@ -215,14 +309,23 @@ const StockOut = ({ refreshStats }) => {
         const clothing = clothes.find(c => c.id === parseInt(item.clothingId))
         return clothing ? clothing.name : '未知服装'
       })
-      alert(`以下服装库存不足：${itemNames.join(', ')}`)
+      safeSetState(setAlertMessage, `以下服装库存不足：${itemNames.join(', ')}`)
+      safeSetState(setAlertType, 'error')
       return
     }
 
     try {
+      // 创建可取消的操作标志
+      let operationCanceled = false
+      
       for (const item of stockOutItems) {
+        // 每次循环都检查组件是否已卸载
+        if (!isMountedRef.current || operationCanceled) {
+          operationCanceled = true
+          return
+        }
+        
         const clothing = clothes.find(c => c.id === parseInt(item.clothingId))
-        const totalAmount = item.quantity * item.sellingPrice
         
         // 确保totalAmount计算正确
         const calculatedTotalAmount = parseFloat((item.quantity * item.sellingPrice).toFixed(2));
@@ -231,17 +334,17 @@ const StockOut = ({ refreshStats }) => {
         await db.stockOut.add({
           clothingId: parseInt(item.clothingId),
           quantity: parseInt(item.quantity),
-          sellingPrice: Math.round(parseFloat(item.sellingPrice) * 100) / 100, // 确保价格精度，避免浮点数误差
-          totalAmount: calculatedTotalAmount, // 使用精确计算的总金额
+          sellingPrice: Math.round(parseFloat(item.sellingPrice) * 100) / 100,
+          totalAmount: calculatedTotalAmount,
           date: formData.date,
           operator: formData.operator || '未知操作员',
           notes: formData.notes || '',
           createdAt: new Date(),
-          updatedAt: new Date() // 添加更新时间字段，便于后续管理
+          updatedAt: new Date()
         });
         
         // 标记离线更改
-        if (!navigator.onLine) {
+        if (!navigator.onLine && db.markOfflineChange) {
           db.markOfflineChange();
         }
         
@@ -259,28 +362,42 @@ const StockOut = ({ refreshStats }) => {
         }
       }
       
-      // 重置表单，但保留操作员信息，并默认展开销售项目部
-      setStockOutItems([{
+      // 检查组件是否仍在挂载
+      if (!isMountedRef.current) return
+      
+      // 重置表单，但保留操作员信息
+      const totalAmount = calculateTotalAmount()
+      safeSetState(setStockOutItems, [{
         id: Date.now(),
         clothingId: '',
         quantity: 1,
         sellingPrice: 0,
         availableQuantity: 0
       }])
-      setFormData({
+      safeSetState(setFormData, {
         date: new Date().toISOString().split('T')[0],
-        operator: formData.operator, // 保留操作员信息
+        operator: formData.operator,
         notes: ''
       })
       
-      setAlertMessage(`出库操作成功完成！销售总额：¥${calculateTotalAmount().toFixed(2)}`)
-      setAlertType('success')
-      await playSuccessSound() // 播放成功提示音
-      refreshStats()
+      // 使用安全的状态更新
+      safeSetState(setAlertMessage, `出库操作成功完成！销售总额：¥${totalAmount.toFixed(2)}`)
+      safeSetState(setAlertType, 'success')
+      
+      // 播放成功提示音 - 不等待完成，避免阻塞UI
+      playSuccessSound().catch(() => {})
+      
+      // 检查组件是否仍在挂载，然后刷新统计数据
+      if (isMountedRef.current && typeof refreshStats === 'function') {
+        refreshStats()
+      }
     } catch (error) {
       console.error('出库操作失败:', error)
-      setAlertMessage('出库操作失败，请重试')
-      setAlertType('error')
+      // 只有在组件挂载时才显示错误信息
+      if (isMountedRef.current) {
+        safeSetState(setAlertMessage, '出库操作失败，请重试')
+        safeSetState(setAlertType, 'error')
+      }
     }
   }
 
@@ -376,9 +493,9 @@ const StockOut = ({ refreshStats }) => {
               marginBottom: '16px'
             }}>
               <h3 style={{ fontSize: '16px', fontWeight: '600' }}>销售商品</h3>
-              <button 
+              <button
                 type="button"
-                onClick={addStockOutItem}
+                onClick={() => addStockOutItem()}
                 className="btn btn-primary"
                 style={{ 
                   minHeight: '36px', 
@@ -388,7 +505,7 @@ const StockOut = ({ refreshStats }) => {
                   maxWidth: '100px',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '4px'
+                  gap: '6px'
                 }}
               >
                 <Plus size={14} />
@@ -554,27 +671,28 @@ const StockOut = ({ refreshStats }) => {
           {/* 操作按钮 */}
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
             <button 
-              type="button"
-              onClick={() => {
-                // 重置表单，默认展开销售项目部
-                setStockOutItems([{
-                  id: Date.now(),
-                  clothingId: '',
-                  quantity: 1,
-                  sellingPrice: 0,
-                  availableQuantity: 0
-                }])
-                setFormData({
-                  date: new Date().toISOString().split('T')[0],
-                  operator: '',
-                  notes: ''
-                })
-              }}
-              className="btn btn-secondary"
-              style={{ minHeight: '44px' }}
-            >
-              重置
-            </button>
+                  type="button"
+                  onClick={() => {
+                    // 重置表单，默认展开销售项目部
+                    setStockOutItems([{
+                      id: Date.now(),
+                      clothingId: '',
+                      quantity: 1,
+                      sellingPrice: 0,
+                      availableQuantity: 0
+                    }])
+                    setFormData({
+                      date: new Date().toISOString().split('T')[0],
+                      operator: '',
+                      notes: ''
+                    })
+                  }}
+                  className="btn btn-secondary"
+                  style={{ minHeight: '44px', display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <RefreshCw size={16} />
+                  重置
+                </button>
             <button 
               type="submit"
               disabled={stockOutItems.length === 0}

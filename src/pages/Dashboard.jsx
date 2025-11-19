@@ -1,20 +1,37 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Package, TrendingUp, Warehouse, Shirt, BarChart3, Database, Users, Settings, RefreshCw, Zap } from 'lucide-react'
 
-const Dashboard = () => {
+const Dashboard = ({ refreshStats }) => {
   const navigate = useNavigate()
   // 系统仅在手机上使用，固定为移动端
   const isMobile = true
   
-  // 刷新数据函数（保留按钮功能）
-  const refreshStats = () => {
-    // 刷新逻辑已简化，因为统计数据已移除
-    console.log('刷新数据')
+  // 组件卸载检测引用
+  const isMountedRef = useRef(true)
+  
+  // 组件卸载时设置标志
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+  
+  // 安全的刷新数据函数，检查组件是否已卸载
+  const safeRefreshStats = () => {
+    if (isMountedRef.current) {
+      // 检查是否传入了refreshStats函数
+      if (typeof refreshStats === 'function') {
+        refreshStats()
+      } else {
+        console.log('刷新数据')
+      }
+    }
   }
   
-  // 创建自定义图标组件，使用emoji作为lucide-react的替代
-  const PackageIcon = ({ size }) => <span style={{ fontSize: size }}>📦</span>
-  const TrendingUpIcon = ({ size }) => <span style={{ fontSize: size }}>📈</span>
+  // 使用lucide-react图标组件
+  const PackageIcon = Package
+  const TrendingUpIcon = TrendingUp
 
   const quickActions = [
     {
@@ -65,7 +82,7 @@ const Dashboard = () => {
       }}>
         <h1 className="text-xl font-semibold">快速操作</h1>
         <button 
-          onClick={refreshStats}
+          onClick={safeRefreshStats}
           className="btn btn-secondary"
           style={{ 
             minHeight: '32px', 
@@ -168,14 +185,6 @@ const Dashboard = () => {
   )
 }
 
-// 图标组件（使用emoji作为简化替代）
-const RefreshCw = ({ size }) => <span style={{ fontSize: size }}>↻</span>
-const Warehouse = ({ size }) => <span style={{ fontSize: size }}>📦</span>
-const Shirt = ({ size }) => <span style={{ fontSize: size }}>👕</span>
-const Zap = ({ size }) => <span style={{ fontSize: size }}>⚡</span>
-const BarChart3 = ({ size }) => <span style={{ fontSize: size }}>📈</span>
-const Database = ({ size }) => <span style={{ fontSize: size }}>🗄️</span>
-const Settings = ({ size }) => <span style={{ fontSize: size }}>⚙️</span>
-const Users = ({ size }) => <span style={{ fontSize: size }}>👥</span>
+// 所有图标已通过lucide-react导入并使用
 
 export default Dashboard

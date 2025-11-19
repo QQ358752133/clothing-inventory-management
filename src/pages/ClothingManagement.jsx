@@ -222,7 +222,7 @@ const ClothingManagement = ({ refreshStats }) => {
   const filteredClothes = clothes
 
   // 常用尺寸选项
-  const sizes = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL']
+  const sizes = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL', '均码']
   
   // 常用颜色选项
   const colors = ['红色', '蓝色', '绿色', '黑色', '白色', '黄色', '紫色', '橙色', '粉色', '灰色', '卡其色', '米白色', '驼色', '米色', '香槟色', '珊瑚色', '薄荷绿', '雾霾蓝', '砖红色', '浅紫色', '鹅黄色', '奶茶色', '烟灰色', '自定义']
@@ -620,10 +620,12 @@ const ClothingManagement = ({ refreshStats }) => {
                           justifyContent: 'center',
                           fontSize: '16px',
                           fontWeight: '500',
-                          transition: 'background-color 0.2s ease'
+                          gap: '6px',
+                          transition: 'all 0.2s ease'
                         }}
                       >
-                        <span style={{ marginRight: '4px' }}>编辑</span>
+                        <Edit size={18} />
+                        <span>编辑</span>
                       </button>
                       
                       {/* 删除按钮 */}
@@ -644,10 +646,12 @@ const ClothingManagement = ({ refreshStats }) => {
                           justifyContent: 'center',
                           fontSize: '16px',
                           fontWeight: '500',
-                          transition: 'background-color 0.2s ease'
+                          gap: '8px',
+                          transition: 'all 0.2s ease'
                         }}
                       >
-                        <span style={{ marginRight: '4px' }}>删除</span>
+                        <Trash2 size={16} />
+                        <span>删除</span>
                       </button>
                     </div>
                   </div>
