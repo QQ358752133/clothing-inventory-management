@@ -645,30 +645,32 @@ const StockIn = ({ refreshStats }) => {
                         </label>
                       ))}
                     </div>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <label className="form-label" htmlFor="customColorInput" style={{ margin: 0 }}>添加自定义颜色：</label>
-                      <input
-                        type="text"
-                        id="customColorInput"
-                        name="customColorInput"
-                        className="form-input"
-                        value={customColorInput}
-                        onChange={(e) => setCustomColorInput(e.target.value)}
-                        placeholder="自定义颜色"
-                      />
-                      <button
-                        type="button"
-                        className="btn btn-primary"
-                        onClick={() => {
-                          if (customColorInput && !selectedColors.includes(customColorInput)) {
-                            setSelectedColors([...selectedColors, customColorInput])
-                            setCustomColorInput('')
-                          }
-                        }}
-                        style={{ minHeight: '44px' }}
-                      >
-                        添加
-                      </button>
+                    <div style={{ display: 'block' }}>
+                      <label className="form-label" htmlFor="customColorInput" style={{ marginBottom: '8px', display: 'block' }}>添加自定义颜色：</label>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          id="customColorInput"
+                          name="customColorInput"
+                          className="form-input"
+                          value={customColorInput}
+                          onChange={(e) => setCustomColorInput(e.target.value)}
+                          placeholder="自定义颜色"
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          onClick={() => {
+                            if (customColorInput && !selectedColors.includes(customColorInput)) {
+                              setSelectedColors([...selectedColors, customColorInput])
+                              setCustomColorInput('')
+                            }
+                          }}
+                          style={{ minHeight: '44px' }}
+                        >
+                          添加
+                        </button>
+                      </div>
                     </div>
                   </div>
                   
